@@ -3,5 +3,6 @@
 
     <string name="hello">Hello World, PG1Activity!</string>
     <string name="app_name">PG1</string>
-
+    <string name="lblCapturar">Capture</string>
+    <string name="lblCancelar">Cancel</string>
 </resources>

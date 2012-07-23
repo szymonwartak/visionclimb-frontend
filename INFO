@@ -1,0 +1,9 @@
+
+
+External code
+-------------
+todataurl.js (http://code.google.com/p/todataurl-png-js/)
+- canvas.toDataUrl() was only implemented in Android 3.0 and we are getting the base64 image to store in the DB here
+
+Foreground camera (http://code.google.com/p/foreground-camera-plugin/)
+- Android foreground camera utility to prevent application being knocked out of memory during photo taking

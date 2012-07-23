@@ -3,102 +3,58 @@
 <head>
 <title>climber</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<script type="text/javascript" charset="utf-8" src="cordova-1.9.0.js"></script>
-<script type="text/javascript" charset="utf-8" src="jquery.js"></script>
-<script type="text/javascript" charset="utf-8" src="jquery.mobile.js"></script>
+<script type="text/javascript" charset="utf-8" src="js/jquery.js"></script>
+<script type="text/javascript" charset="utf-8" src="js/jquery.mobile.js"></script>
+<script type="text/javascript" charset="utf-8" src="js/phonegap.js"></script>
+
+<!-- foreground camera for android background closing bug -->
+<script type="text/javascript" src="js/camera.js"></script>
+
+<!-- if android version <3.0 -->
+<script type="text/javascript" charset="utf-8" src="js/todataurl.js"></script>
+
+
+<!--  setup climbing image behaviour  --> 
+<script type="text/javascript" charset="utf-8" src="js/climage.js"></script>
+<script type="text/javascript" charset="utf-8" src="js/rest.js"></script>
 <script type="text/javascript">
-function Climage() {
-	this.routePointsX = new Array();
-	this.routePointsY = new Array();
-	this.previousX = null;
-	this.previousY = null;
-	this.Xsize = 4;
-};
-var climagePrototype = {
-	addRoutePoint: function( x,y ) {
-		$('#output').append(x+", "+y+"<br/>");
-		var ctx = $('#canvas')[0].getContext('2d');
-		ctx.lineWidth = 2; 
-		ctx.strokeStyle = '#00ff00';
-		if(!this.previousX && !this.previousY) {
-			ctx.beginPath();
-			ctx.moveTo(x-this.Xsize, y-this.Xsize);
-			ctx.lineTo(x+this.Xsize, y+this.Xsize);
-			ctx.stroke();
-			ctx.beginPath();
-			ctx.moveTo(x+this.Xsize, y-this.Xsize);
-			ctx.lineTo(x-this.Xsize, y+this.Xsize);
-			ctx.stroke();
-		} else {
-			ctx.beginPath();
-			ctx.moveTo(this.previousX, this.previousY);
-			ctx.lineTo(x, y);
-			ctx.stroke();
-		}
-		this.previousX = x;
-		this.previousY = y;
-		this.routePointsX.push(x);
-		this.routePointsY.push(y);
-	},
-	setGrade: function ( grade ) {
-		this.grade = grade;
-	},
-	takePicture: function() {
-		/* var that = this;
-		navigator.camera.getPicture(
-			function(url) {
-				that.img = new Image();
-				that.img.onload = function() {
-					$('#canvas')[0].getContext('2d').drawImage(that.img,0,0,300,200);				
-				};
-				that.img.src = url;
-			},
-			function(msg) {
-				$('#output').append(msg);				
-			}, // fail
-			{ quality: 50, allowEdit: true, destinationType: navigator.camera.DestinationType.FILE_URI}
-		); */
-		this.img = new Image();
-		this.img.src = 'asdf.png';
-		$('#canvas')[0].getContext('2d').drawImage(this.img,0,0,300,200);
-	},
-	save: function() {
-		var imageData = $('#canvas')[0].toDataURL();
-		$('#output').append(imageData);
-	}
-};
-Climage.prototype = climagePrototype;
-var currentClimage = new Climage(); 
-$(document).bind('pageinit',function(event) {
-	$('#canvas').click(function(e) {
-		currentClimage.addRoutePoint(e.clientX-$("#canvas").offset().left, e.clientY-$("#canvas").offset().top);
+var currentClimage; 
+$(document).bind('pageinit',function(event) { 
+	currentClimage = new Climage(); 
+	$('#canvas').click(function(e) { 
+		currentClimage.addRoutePoint(e.clientX-$("#canvas").offset().left, e.clientY-$("#canvas").offset().top); 
+	}); 
+	$.getJSON('http://'+server+'/api/route/getRoutes', function(data) { 
+		var items = ['<option></option>']; 
+		data.map( function(route) { 
+			items.push('<option value="'+route.id+'">'+route.name+'</option>'); 
+		}); 
+//						$('<select/>', { 
+//							'id': 'routeSelector', 
+//							html: items.join('') 
+//						}).appendTo('#routeList'); 
+		$('#routeSelector').html(items.join('')) 
+	}); 
+	$('#routeSelector').change(function() { 
+		getRoute($('#routeSelector option:selected').val()) 
 	});
-});
+}); 
 </script>
+
+
 </head>
 <body>
 
 <div data-role="page">
 
-	<div data-role="header">
-		<h1>Hello World</h1>
-	</div><!-- /header -->
+	<select id="routeSelector"></select>
+	<input type="submit" onclick="location.reload()" value="reload"/>
 
-	<div data-role="content">	
-		<p>paragraph 1</p>
-		<div>
-			Image here
-			<a href="http://www.hitcents.com/sites/all/themes/hitcents/images/logo.png">
-				<img src="http://www.hitcents.com/sites/all/themes/hitcents/images/logo.png"/>
-			</a>
-		</div>
-		<img style="width:144px;height:144px;" id="camera_image1" src="nophoto.jpg"/>
-		<input type="submit" onclick="currentClimage.takePicture()" value="take picture"/>
-		<canvas width="300" height="200" id="canvas"></canvas>
-		<input type="submit" onclick="currentClimage.save()" value="save"/>
-
-		<div id="output"></div>
-	</div><!-- /content -->
+	<canvas width="300" height="200" id="canvas"></canvas>
+	<input type="text" id="routeName"/>
+	<input type="submit" onclick="postClimage()" value="send"/>
+	<input type="submit" onclick="currentClimage.takePicture()" value="picture"/>
+	<div id="output"></div>
 
 </div><!-- /page -->
 </body>
