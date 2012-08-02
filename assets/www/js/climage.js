@@ -5,6 +5,7 @@ function Climage() {
 	this.previousY = null;
 	this.Xsize = 4;
 	this.image = null;
+	this.latitude = 0; this.longitude = 0;
 	this.ctx = $('#canvas')[0].getContext('2d');
 };
 var climagePrototype = {

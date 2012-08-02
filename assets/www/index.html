@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script type="text/javascript" charset="utf-8" src="js/jquery.js"></script>
 <script type="text/javascript" charset="utf-8" src="js/jquery.mobile.js"></script>
+<link rel="stylesheet" type="text/css" href="css/jquery.mobile.css" />
+<link rel="stylesheet" type="text/css" href="css/jquery.mobile.structure.css" />
+<link rel="stylesheet" type="text/css" href="css/jquery.mobile.theme.css" />
 <script type="text/javascript" charset="utf-8" src="js/phonegap.js"></script>
 
 <!-- foreground camera for android background closing bug -->
@@ -13,8 +16,14 @@
 <!-- if android version <3.0 -->
 <script type="text/javascript" charset="utf-8" src="js/todataurl.js"></script>
 
+<!-- mapping apis -->
+<script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=false"></script>
+<script type="text/javascript" src="js/jquery.ui.map/jquery.ui.map.js"></script>
+<script type="text/javascript" src="js/jquery.ui.map/jquery.ui.map.services.js"></script>
+<style>
+</style>
 
-<!--  setup climbing image behaviour  --> 
+<!--  setup climbing image behaviour  -->
 <script type="text/javascript" charset="utf-8" src="js/climage.js"></script>
 <script type="text/javascript" charset="utf-8" src="js/rest.js"></script>
 <script type="text/javascript">
@@ -24,38 +33,170 @@ $(document).bind('pageinit',function(event) {
 	$('#canvas').click(function(e) { 
 		currentClimage.addRoutePoint(e.clientX-$("#canvas").offset().left, e.clientY-$("#canvas").offset().top); 
 	}); 
-	$.getJSON('http://'+server+'/api/route/getRoutes', function(data) { 
-		var items = ['<option></option>']; 
-		data.map( function(route) { 
-			items.push('<option value="'+route.id+'">'+route.name+'</option>'); 
-		}); 
-//						$('<select/>', { 
-//							'id': 'routeSelector', 
-//							html: items.join('') 
-//						}).appendTo('#routeList'); 
-		$('#routeSelector').html(items.join('')) 
-	}); 
+// 	$.getJSON('http://'+server+'/api/route/getRoutes', function(data) { 
+// 		var items = ['<option></option>']; 
+// 		data.map( function(route) { 
+			
+// 			items.push('<option value="'+route.id+'">'+route.name+'</option>'); 
+// 		}); 
+// //						$('<select/>', { 
+// //							'id': 'routeSelector', 
+// //							html: items.join('') 
+// //						}).appendTo('#routeList'); 
+// 		$('#routeSelector').html(items.join('')) 
+// 	}); 
 	$('#routeSelector').change(function() { 
 		getRoute($('#routeSelector option:selected').val()) 
 	});
+
+
 }); 
+
+// MAPPING
+var currentMap;
+function centreToLocation(latitude, longitude, zoom) {
+	var mapOptions = {
+		zoom: zoom,
+		streetViewControl : false,
+		center: new google.maps.LatLng(latitude, longitude),
+		mapTypeId: google.maps.MapTypeId.ROADMAP
+	}
+	currentMap = new google.maps.Map($('#map-square')[0], mapOptions);
+}
+function addSite(latitude, longitude) {
+	var marker = new google.maps.Marker({
+		position: new google.maps.LatLng(latitude, longitude),
+		map: currentMap,
+		title:"Hello World!"
+	});
+	google.maps.event.addListener(marker,'click', function() {
+		centreToLocation(marker.position.Ya, marker.position.Za, 16)
+		markRoutesNear(marker.position.Ya, marker.position.Za)
+	});
+}
+function addRoute(routeId, latitude, longitude) {
+	var marker = new google.maps.Marker({
+		position: new google.maps.LatLng(latitude, longitude),
+		map: currentMap,
+		title:"Hello World!"
+	});
+	google.maps.event.addListener(marker,'click', function() {
+		$.mobile.changePage('#route')
+		getRoute(routeId)
+	});
+}
+function updateLocation() {
+	navigator.geolocation.getCurrentPosition(
+			function(position) {
+				currentClimage.latitude = position.coords.latitude
+				currentClimage.longitude = position.coords.longitude
+				$('#latitude').val(position.coords.latitude)
+				$('#longitude').val(position.coords.longitude)
+//	 			alert('Latitude: '		  + position.coords.latitude		  + '\n' +
+//	 				  'Longitude: '		 + position.coords.longitude		 + '\n' +
+//	 				  'Accuracy: '		  + position.coords.accuracy		  + '\n' +
+			}, function(error) {  alert('code: '	+ error.code	+ '\n' +
+					  'message: ' + error.message + '\n'); },
+			{ maximumAge: 60000, timeout: 30000, enableHighAccuracy: true }
+		);
+}
+
+// get routes at the tapped climbing site
+function markRoutesNear(latitude, longitude) {
+	$.getJSON('http://'+server+'/api/route/get/1', function(data) {
+		addRoute(1, data.latitude, data.longitude);
+	});
+	$.getJSON('http://'+server+'/api/route/get/4', function(data) {
+		addRoute(4, data.latitude, data.longitude);
+	});
+}
+// get climbing sites and place markers on the map denoting them
+function markSitesNear(latitude, longitude) {
+	// probably should default load on page with current GPS coordinates
+	addSite(53, 0);
+}
+
+
+// $(document).bind('deviceready',function() {
+$(document).bind('ready',function() {
+	centreToLocation(53, 0, 4);
+	markSitesNear(53, 0);
+});
+
+
+$(window).delegate('#map', 'pageshow', function () {
+	var the_height = ($(window).height() - $(this).find('[data-role="header"]').height() - $(this).find('[data-role="footer"]').height());
+    $(this).height($(window).height()).find('[data-role="content"]').height(the_height);
+	var the_width = ($(window).width() - $(this).find('[data-role="header"]').width() - $(this).find('[data-role="footer"]').width());
+    $(this).width($(window).width()).find('[data-role="content"]').width(the_width);
+});
+
 </script>
 
 
 </head>
 <body>
 
-<div data-role="page">
+	<div data-role="page" id="map">
+		<div data-role="header">
+			<div data-role="navbar">
+				<ul>
+					<li><a href="#home">Home</a></li>
+					<li><a href="#map" class="ui-btn-active">Map</a></li>
+					<li><a href="#route">Route</a></li>
+				</ul>
+			</div>		
+		</div>
+		<div data-role="content" id="map-square"></div>
+		<div data-role="footer">
+		</div>		
+	</div>
 
-	<select id="routeSelector"></select>
-	<input type="submit" onclick="location.reload()" value="reload"/>
 
-	<canvas width="300" height="200" id="canvas"></canvas>
-	<input type="text" id="routeName"/>
-	<input type="submit" onclick="postClimage()" value="send"/>
-	<input type="submit" onclick="currentClimage.takePicture()" value="picture"/>
-	<div id="output"></div>
+	<div data-role="page" id="home">
+		<div data-role="header">
+			<div data-role="navbar">
+				<ul>
+					<li><a href="#home" class="ui-btn-active">Home</a></li>
+					<li><a href="#map">Map</a></li>
+					<li><a href="#route">Route</a></li>
+				</ul>
+			</div>
+		</div>
+		<div data-role="content">
+			<p>like whatever</p>
+		</div>
+		<div data-role="footer">
+		</div>
+	</div>
 
-</div><!-- /page -->
+
+	<div data-role="page" id="route">
+		<div data-role="header">
+			<div data-role="navbar">
+				<ul>
+					<li><a href="#home">Home</a></li>
+					<li><a href="#map">Map</a></li>
+					<li><a href="#route" class="ui-btn-active">Route</a></li>
+				</ul>
+			</div>		
+		</div>
+		<div data-role="content">
+<!-- 			<select id="routeSelector"></select> <input type="submit" -->
+<!-- 				onclick="location.reload()" value="reload" /> -->
+	
+			<canvas width="300" height="200" id="canvas"></canvas>
+			<input type="text" id="latitude" value="53" />
+			<input type="text" id="longitude" value="0" />
+			<input type="text" id="routeName" value="a route" />
+			<input type="submit"
+				onclick="postClimage()" value="send" /> <input type="submit"
+				onclick="currentClimage.takePicture()" value="picture" />
+			<div id="output"></div>
+		</div>
+		<div data-role="footer">
+		</div>		
+	</div>
+
 </body>
 </html>

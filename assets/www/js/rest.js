@@ -7,6 +7,8 @@ function postClimage() {
 			name: $('#routeName')[0].value,
 			routePointsX: JSON.stringify(currentClimage.routePointsX),
 			routePointsY: JSON.stringify(currentClimage.routePointsY),
+			latitude: $('#latitude').val(),
+			longitude: $('#longitude').val(),
 			image: currentClimage.image
 		},
 		success: function(data) {
