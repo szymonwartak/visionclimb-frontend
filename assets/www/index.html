@@ -28,29 +28,6 @@
 <script type="text/javascript" charset="utf-8" src="js/rest.js"></script>
 <script type="text/javascript">
 var currentClimage; 
-$(document).bind('pageinit',function(event) { 
-	currentClimage = new Climage(); 
-	$('#canvas').click(function(e) { 
-		currentClimage.addRoutePoint(e.clientX-$("#canvas").offset().left, e.clientY-$("#canvas").offset().top); 
-	}); 
-// 	$.getJSON('http://'+server+'/api/route/getRoutes', function(data) { 
-// 		var items = ['<option></option>']; 
-// 		data.map( function(route) { 
-			
-// 			items.push('<option value="'+route.id+'">'+route.name+'</option>'); 
-// 		}); 
-// //						$('<select/>', { 
-// //							'id': 'routeSelector', 
-// //							html: items.join('') 
-// //						}).appendTo('#routeList'); 
-// 		$('#routeSelector').html(items.join('')) 
-// 	}); 
-	$('#routeSelector').change(function() { 
-		getRoute($('#routeSelector option:selected').val()) 
-	});
-
-
-}); 
 
 // MAPPING
 var currentMap;
@@ -63,18 +40,18 @@ function centreToLocation(latitude, longitude, zoom) {
 	}
 	currentMap = new google.maps.Map($('#map-square')[0], mapOptions);
 }
-function addSite(latitude, longitude) {
+function addArea(latitude, longitude, areaId) {
 	var marker = new google.maps.Marker({
 		position: new google.maps.LatLng(latitude, longitude),
 		map: currentMap,
 		title:"Hello World!"
 	});
 	google.maps.event.addListener(marker,'click', function() {
-		centreToLocation(marker.position.Ya, marker.position.Za, 16)
-		markRoutesNear(marker.position.Ya, marker.position.Za)
+		centreToLocation(marker.position.Ya, marker.position.Za, currentClimage.areaZoom)
+		markAreaRoutes(areaId)
 	});
 }
-function addRoute(routeId, latitude, longitude) {
+function addRoute(latitude, longitude, routeId) {
 	var marker = new google.maps.Marker({
 		position: new google.maps.LatLng(latitude, longitude),
 		map: currentMap,
@@ -87,58 +64,84 @@ function addRoute(routeId, latitude, longitude) {
 }
 function updateLocation() {
 	navigator.geolocation.getCurrentPosition(
-			function(position) {
-				currentClimage.latitude = position.coords.latitude
-				currentClimage.longitude = position.coords.longitude
-				$('#latitude').val(position.coords.latitude)
-				$('#longitude').val(position.coords.longitude)
-//	 			alert('Latitude: '		  + position.coords.latitude		  + '\n' +
-//	 				  'Longitude: '		 + position.coords.longitude		 + '\n' +
-//	 				  'Accuracy: '		  + position.coords.accuracy		  + '\n' +
-			}, function(error) {  alert('code: '	+ error.code	+ '\n' +
-					  'message: ' + error.message + '\n'); },
-			{ maximumAge: 60000, timeout: 30000, enableHighAccuracy: true }
-		);
+		function(position) {
+			currentClimage.latitude = position.coords.latitude
+			currentClimage.longitude = position.coords.longitude
+			centreToLocation(currentClimage.latitude, currentClimage.longitude, currentClimage.globalZoom)
+			$('#latitude').val(position.coords.latitude)
+			$('#longitude').val(position.coords.longitude)
+//  			alert('Latitude: '		  + position.coords.latitude		  + '\n' +
+//  				  'Longitude: '		 + position.coords.longitude		 + '\n' +
+//  				  'Accuracy: '		  + position.coords.accuracy		  + '\n' +
+		}, function(error) {  alert('code: '	+ error.code	+ '\n' +
+				  'message: ' + error.message + '\n'); },
+		{ maximumAge: 60000, timeout: 30000, enableHighAccuracy: true }
+	);
 }
 
 // get routes at the tapped climbing site
-function markRoutesNear(latitude, longitude) {
-	$.getJSON('http://'+server+'/api/route/get/1', function(data) {
-		addRoute(1, data.latitude, data.longitude);
-	});
-	$.getJSON('http://'+server+'/api/route/get/4', function(data) {
-		addRoute(4, data.latitude, data.longitude);
-	});
+function markAreaRoutes(areaId) {
+	$.getJSON('http://'+server+'/api/route/getAreaRoutes/'+areaId, function(data) {
+		$(data).each(function() {
+			addRoute($(this).attr('latitude'), $(this).attr('longitude'), $(this).attr('id'))
+		})
+	})
 }
 // get climbing sites and place markers on the map denoting them
 function markSitesNear(latitude, longitude) {
-	// probably should default load on page with current GPS coordinates
-	addSite(53, 0);
+	$.getJSON('http://'+server+'/api/route/getAreas', function(data) {
+		$(data).each(function() {
+			addArea($(this).attr('latitude'), $(this).attr('longitude'), $(this).attr('id'))
+		})
+	})
+}
+function resetMap() {
+	updateLocation()
+	centreToLocation(currentClimage.latitude, currentClimage.longitude, currentClimage.globalZoom)
+	markSitesNear(currentClimage.latitude, currentClimage.longitude)
 }
 
 
-// $(document).bind('deviceready',function() {
-$(document).bind('ready',function() {
-	centreToLocation(53, 0, 4);
-	markSitesNear(53, 0);
-});
-
-
-$(window).delegate('#map', 'pageshow', function () {
-	var the_height = ($(window).height() - $(this).find('[data-role="header"]').height() - $(this).find('[data-role="footer"]').height());
-    $(this).height($(window).height()).find('[data-role="content"]').height(the_height);
-	var the_width = ($(window).width() - $(this).find('[data-role="header"]').width() - $(this).find('[data-role="footer"]').width());
+// stretch the footer to the bottom of the page [1. get rid of padding (prevents jerky adjustment) or 2. adjust for padding (keeps padding for nice inner layout)]
+$(window).delegate('.content-adjust-no-padding', 'pageshow', function () {
+	$(this).find('[data-role="content"]').css('padding','0px'); // override the padding for the content so things don't overflow
+	var the_height = ($(window).height() - $(this).find('[data-role="header"]').height() - $(this).find('[data-role="footer"]').height())
+    $(this).height($(window).height()).find('[data-role="content"]').height(the_height)
+	var the_width = $(window).width();
     $(this).width($(window).width()).find('[data-role="content"]').width(the_width);
 });
+$(window).delegate('.content-adjust-for-padding', 'pageshow', function () {
+	var contentVerticalPadding = parseInt($(this).find('[data-role="content"]').css('padding-left'))+parseInt($(this).find('[data-role="content"]').css('padding-right'))
+	var the_height = ($(window).height() - $(this).find('[data-role="header"]').height() - $(this).find('[data-role="footer"]').height())
+    $(this).height($(window).height()).find('[data-role="content"]').height(the_height-contentVerticalPadding)
+    
+	var contentHorizontalPadding = parseInt($(this).find('[data-role="content"]').css('padding-top'))+parseInt($(this).find('[data-role="content"]').css('padding-bottom'))
+	var the_width = $(window).width();
+    $(this).width($(window).width()).find('[data-role="content"]').width(the_width-contentHorizontalPadding);
+});
 
+$(document).bind('pageinit',function(event) { 
+	currentClimage = new Climage(); 
+	$('#canvas').click(function(e) { 
+		currentClimage.addRoutePoint(e.clientX-$("#canvas").offset().left, e.clientY-$("#canvas").offset().top); 
+	}) 
+	$('#routeSelector').change(function() { 
+		getRoute($('#routeSelector option:selected').val()) 
+	})
+}); 
+
+//$(document).bind('deviceready',function() {
+$(document).bind('ready',function() {
+	resetMap()
+});
 </script>
 
 
 </head>
 <body>
 
-	<div data-role="page" id="map">
-		<div data-role="header">
+	<div data-role="page" id="map" class="content-adjust-no-padding">
+		<div data-role="header" id="map-header">
 			<div data-role="navbar">
 				<ul>
 					<li><a href="#home">Home</a></li>
@@ -148,12 +151,17 @@ $(window).delegate('#map', 'pageshow', function () {
 			</div>		
 		</div>
 		<div data-role="content" id="map-square"></div>
-		<div data-role="footer">
+		<div data-role="footer" id="map-footer">
+			<div data-role="navbar">
+				<ul>
+					<li><a onclick="resetMap()">Reset</a></li>
+				</ul>
+			</div>
 		</div>		
 	</div>
 
 
-	<div data-role="page" id="home">
+	<div data-role="page" id="home" class="content-adjust-for-padding">
 		<div data-role="header">
 			<div data-role="navbar">
 				<ul>
@@ -171,7 +179,7 @@ $(window).delegate('#map', 'pageshow', function () {
 	</div>
 
 
-	<div data-role="page" id="route">
+	<div data-role="page" id="route" class="content-adjust-for-padding">
 		<div data-role="header">
 			<div data-role="navbar">
 				<ul>
@@ -182,19 +190,19 @@ $(window).delegate('#map', 'pageshow', function () {
 			</div>		
 		</div>
 		<div data-role="content">
-<!-- 			<select id="routeSelector"></select> <input type="submit" -->
-<!-- 				onclick="location.reload()" value="reload" /> -->
-	
-			<canvas width="300" height="200" id="canvas"></canvas>
+			<canvas width="300" height="200" id="canvas" style="border:1px solid black;"></canvas>
 			<input type="text" id="latitude" value="53" />
 			<input type="text" id="longitude" value="0" />
 			<input type="text" id="routeName" value="a route" />
-			<input type="submit"
-				onclick="postClimage()" value="send" /> <input type="submit"
-				onclick="currentClimage.takePicture()" value="picture" />
 			<div id="output"></div>
 		</div>
 		<div data-role="footer">
+			<div data-role="navbar">
+				<ul>
+					<li><a onclick="postClimage()">Save</a></li>
+					<li><a onclick="currentClimage.takePhoto()">Take Photo</a></li>
+				</ul>
+			</div>
 		</div>		
 	</div>
 

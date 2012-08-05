@@ -5,8 +5,9 @@ function Climage() {
 	this.previousY = null;
 	this.Xsize = 4;
 	this.image = null;
-	this.latitude = 0; this.longitude = 0;
+	this.latitude = 53; this.longitude = 0;
 	this.ctx = $('#canvas')[0].getContext('2d');
+	this.globalZoom = 6; this.areaZoom = 14;
 };
 var climagePrototype = {
 	addRoutePoint: function( x,y ) {
@@ -77,7 +78,8 @@ var climagePrototype = {
 	setGrade: function ( grade ) {
 		this.grade = grade;
 	},
-	takePicture: function() {
+	takePhoto: function() {
+		this.clearRoutes()
 		var that = this;
 		navigator.camera.getPicture(
 			function(url) {
@@ -99,6 +101,10 @@ var climagePrototype = {
 //			that.image = $('#canvas')[0].toDataURL();
 //		};
 //		this.image.src = 'images/asdf.png';
+	},
+	clearRoutes: function () {
+		this.routePointsX = new Array();
+		this.routePointsY = new Array();
 	},
 	save: function() {
 		var imageData = $('#canvas')[0].toDataURL();
