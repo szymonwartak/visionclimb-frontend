@@ -23,84 +23,18 @@
 <style>
 </style>
 
-<!--  setup climbing image behaviour  -->
+<!--  setup climbing image, mapping, comm behaviour  -->
+<script type="text/javascript" charset="utf-8" src="js/geo.js"></script>
 <script type="text/javascript" charset="utf-8" src="js/climage.js"></script>
 <script type="text/javascript" charset="utf-8" src="js/rest.js"></script>
 <script type="text/javascript">
 var currentClimage; 
 
-// MAPPING
-var currentMap;
-function centreToLocation(latitude, longitude, zoom) {
-	var mapOptions = {
-		zoom: zoom,
-		streetViewControl : false,
-		center: new google.maps.LatLng(latitude, longitude),
-		mapTypeId: google.maps.MapTypeId.ROADMAP
-	}
-	currentMap = new google.maps.Map($('#map-square')[0], mapOptions);
-}
-function addArea(latitude, longitude, areaId) {
-	var marker = new google.maps.Marker({
-		position: new google.maps.LatLng(latitude, longitude),
-		map: currentMap,
-		title:"Hello World!"
-	});
-	google.maps.event.addListener(marker,'click', function() {
-		centreToLocation(marker.position.Ya, marker.position.Za, currentClimage.areaZoom)
-		markAreaRoutes(areaId)
-	});
-}
-function addRoute(latitude, longitude, routeId) {
-	var marker = new google.maps.Marker({
-		position: new google.maps.LatLng(latitude, longitude),
-		map: currentMap,
-		title:"Hello World!"
-	});
-	google.maps.event.addListener(marker,'click', function() {
-		$.mobile.changePage('#route')
-		getRoute(routeId)
-	});
-}
-function updateLocation() {
-	navigator.geolocation.getCurrentPosition(
-		function(position) {
-			currentClimage.latitude = position.coords.latitude
-			currentClimage.longitude = position.coords.longitude
-			centreToLocation(currentClimage.latitude, currentClimage.longitude, currentClimage.globalZoom)
-			$('#latitude').val(position.coords.latitude)
-			$('#longitude').val(position.coords.longitude)
-//  			alert('Latitude: '		  + position.coords.latitude		  + '\n' +
-//  				  'Longitude: '		 + position.coords.longitude		 + '\n' +
-//  				  'Accuracy: '		  + position.coords.accuracy		  + '\n' +
-		}, function(error) {  alert('code: '	+ error.code	+ '\n' +
-				  'message: ' + error.message + '\n'); },
-		{ maximumAge: 60000, timeout: 30000, enableHighAccuracy: true }
-	);
-}
-
-// get routes at the tapped climbing site
-function markAreaRoutes(areaId) {
-	$.getJSON('http://'+server+'/api/route/getAreaRoutes/'+areaId, function(data) {
-		$(data).each(function() {
-			addRoute($(this).attr('latitude'), $(this).attr('longitude'), $(this).attr('id'))
-		})
-	})
-}
-// get climbing sites and place markers on the map denoting them
-function markSitesNear(latitude, longitude) {
-	$.getJSON('http://'+server+'/api/route/getAreas', function(data) {
-		$(data).each(function() {
-			addArea($(this).attr('latitude'), $(this).attr('longitude'), $(this).attr('id'))
-		})
-	})
-}
 function resetMap() {
-	updateLocation()
-	centreToLocation(currentClimage.latitude, currentClimage.longitude, currentClimage.globalZoom)
-	markSitesNear(currentClimage.latitude, currentClimage.longitude)
+	geo.updateLocation()
+	geo.centreToLocation(currentClimage.latitude, currentClimage.longitude, currentClimage.globalZoom)
+	geo.markSitesNear(currentClimage.latitude, currentClimage.longitude)
 }
-
 
 // stretch the footer to the bottom of the page [1. get rid of padding (prevents jerky adjustment) or 2. adjust for padding (keeps padding for nice inner layout)]
 $(window).delegate('.content-adjust-no-padding', 'pageshow', function () {
@@ -130,8 +64,8 @@ $(document).bind('pageinit',function(event) {
 	})
 }); 
 
-//$(document).bind('deviceready',function() {
-$(document).bind('ready',function() {
+$(document).bind('deviceready',function() {
+// $(document).bind('ready',function() {
 	resetMap()
 });
 </script>
@@ -199,7 +133,7 @@ $(document).bind('ready',function() {
 		<div data-role="footer">
 			<div data-role="navbar">
 				<ul>
-					<li><a onclick="postClimage()">Save</a></li>
+					<li><a onclick="comm.postClimage()">Save</a></li>
 					<li><a onclick="currentClimage.takePhoto()">Take Photo</a></li>
 				</ul>
 			</div>
