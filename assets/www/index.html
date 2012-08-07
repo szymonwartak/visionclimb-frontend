@@ -31,9 +31,19 @@
 var currentClimage; 
 
 function resetMap() {
+	currentClimage.setAreaId(0)
 	geo.updateLocation()
 	geo.centreToLocation(currentClimage.latitude, currentClimage.longitude, currentClimage.globalZoom)
 	geo.markSitesNear(currentClimage.latitude, currentClimage.longitude)
+}
+function newRoute() {
+	if(currentClimage.areaId != 0) {
+		$.mobile.changePage('#route')
+		currentClimage.clearRoutes()
+		currentClimage.takePhoto()		
+	} else {
+		alert('Please select area before adding route...')
+	}
 }
 
 // stretch the footer to the bottom of the page [1. get rid of padding (prevents jerky adjustment) or 2. adjust for padding (keeps padding for nice inner layout)]
@@ -74,6 +84,26 @@ $(document).bind('deviceready',function() {
 </head>
 <body>
 
+
+	<div data-role="page" id="home" class="content-adjust-for-padding">
+		<div data-role="header">
+			<div data-role="navbar">
+				<ul>
+					<li><a href="#home" class="ui-btn-active">Home</a></li>
+					<li><a href="#map">Map</a></li>
+					<li><a href="#route">Route</a></li>
+				</ul>
+			</div>
+		</div>
+		<div data-role="content">
+			<p>VisionClimb</p>
+			<p onclick="comm.getRoutesAndImage([1,2,3],1)">Tap an area in the map and create a new climbing route there.</p>
+		</div>
+		<div data-role="footer">
+		</div>
+	</div>
+
+
 	<div data-role="page" id="map" class="content-adjust-no-padding">
 		<div data-role="header" id="map-header">
 			<div data-role="navbar">
@@ -89,27 +119,10 @@ $(document).bind('deviceready',function() {
 			<div data-role="navbar">
 				<ul>
 					<li><a onclick="resetMap()">Reset</a></li>
+					<li><a onclick="newRoute()">New Route</a></li>
 				</ul>
 			</div>
 		</div>		
-	</div>
-
-
-	<div data-role="page" id="home" class="content-adjust-for-padding">
-		<div data-role="header">
-			<div data-role="navbar">
-				<ul>
-					<li><a href="#home" class="ui-btn-active">Home</a></li>
-					<li><a href="#map">Map</a></li>
-					<li><a href="#route">Route</a></li>
-				</ul>
-			</div>
-		</div>
-		<div data-role="content">
-			<p>like whatever</p>
-		</div>
-		<div data-role="footer">
-		</div>
 	</div>
 
 
@@ -125,16 +138,16 @@ $(document).bind('deviceready',function() {
 		</div>
 		<div data-role="content">
 			<canvas width="300" height="200" id="canvas" style="border:1px solid black;"></canvas>
-			<input type="text" id="latitude" value="53" />
-			<input type="text" id="longitude" value="0" />
-			<input type="text" id="routeName" value="a route" />
+			<label for="areaId">Area ID:</label><input type="text" id="areaId" value="0" readonly="readonly" />
+			<label for="latitude">Latitude:</label><input type="text" id="latitude" value="53" />
+			<label for="longitude">Longitude:</label><input type="text" id="longitude" value="0" />
+			<label for="routeName">Route name:</label><input type="text" id="routeName" value="a route" />
 			<div id="output"></div>
 		</div>
 		<div data-role="footer">
 			<div data-role="navbar">
 				<ul>
-					<li><a onclick="comm.postClimage()">Save</a></li>
-					<li><a onclick="currentClimage.takePhoto()">Take Photo</a></li>
+					<li><a onclick="currentClimage.save()">Save</a></li>
 				</ul>
 			</div>
 		</div>		
