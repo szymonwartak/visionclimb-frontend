@@ -2,24 +2,14 @@ var comm = (function() {
 	return {
 		server: "www.visionclimb.com",
 //		server: "localhost:8080",
-		saveRouteWithImage: function(climageData) {
+		saveRoute: function(saveFunction, climageData) {
 			$.ajax({
 				type: 'POST',
-				url: 'http://'+this.server+'/api/route/postRouteWithImage',
+				url: 'http://'+this.server+'/api/route/'+saveFunction,
 				data: climageData,
 				success: function(data) {
-					alert(data);
-				},
-				contentType: 'application/x-www-form-urlencoded'
-			});
-		},
-		saveRoute: function(climageData) {
-			$.ajax({
-				type: 'POST',
-				url: 'http://'+this.server+'/api/route/postRoute',
-				data: climageData,
-				success: function(data) {
-					alert(data);
+					alert('saved')
+					geo.markAreaRoutes(currentClimage.areaId)
 				},
 				contentType: 'application/x-www-form-urlencoded'
 			});

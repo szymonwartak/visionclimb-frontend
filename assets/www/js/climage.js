@@ -1,6 +1,6 @@
 function Climage() {
-	this.newRoutePointsX = new Array();
-	this.newRoutePointsY = new Array();
+	this.newRoutePointsX = [];
+	this.newRoutePointsY = [];
 	this.previousX = null;
 	this.previousY = null;
 	this.Xsize = 4;
@@ -94,6 +94,8 @@ var climagePrototype = {
 		this.grade = grade;
 	},
 	takePhoto: function() {
+		this.imageId = 0
+		
 		var that = this;
 		navigator.camera.getPicture(
 			function(url) {
@@ -117,15 +119,22 @@ var climagePrototype = {
 //		this.image.src = 'images/asdf.png';		
 	},
 	clearRoutes: function () {
-		this.areaId = 0
-		this.routePointsX = new Array();
-		this.routePointsY = new Array();
+		this.previousX = null;
+		this.previousY = null;
+		this.newRoutePointsX = [];
+		this.newRoutePointsY = [];
+		this.routePointsX = [];
+		this.routePointsY = [];
 	},
 	setAreaId: function( areaId ) {
 		this.areaId = areaId
 		$('#areaId').val(areaId)
 	},
 	save: function() {
+		if(!currentClimage.newRoutePointsX || currentClimage.newRoutePointsX.length<2) {
+			alert('mark the route with at least 2 points')
+			return
+		}
 		var data = {
 				name: $('#routeName').val(),
 				routePointsX: JSON.stringify(currentClimage.newRoutePointsX),
@@ -136,10 +145,10 @@ var climagePrototype = {
 			};
 		if(currentClimage.imageId==0) {
 			data['image'] = currentClimage.image
-			comm.saveRouteWithImage(data)			
+			comm.saveRoute('postRouteWithImage', data)			
 		} else {
 			data['imageId'] = currentClimage.imageId
-			comm.saveRoute(data)			
+			comm.saveRoute('postRoute', data)			
 		}
 	}
 };

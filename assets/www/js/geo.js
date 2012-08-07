@@ -23,40 +23,48 @@ var geo = (function() {
 			var marker = new google.maps.Marker({
 				position: new google.maps.LatLng(latitude, longitude),
 				map: geo.currentMap,
-				title:"Hello World!"
+				title:name
 			});
 			google.maps.event.addListener(marker,'click', function() {
 				currentClimage.setAreaId(areaId)
-				geo.centreToLocation(marker.position.Ya, marker.position.Za, currentClimage.areaZoom)
+				geo.centreToLocation(latitude, longitude, currentClimage.areaZoom)
 				currentAreaRoutes = {}
 				geo.markAreaRoutes(areaId)
 			});
 		},
 		addRoute: function (latitude, longitude, routeId, imageId) {
-			var latlng = (latitude+"_"+longitude).replace('.','__')
-			if(this.currentAreaRoutes[latlng]) {
+			var latlng = (latitude+"_"+longitude).replace(/\./g,'__') // not sure if the replace is actually needed to keep the keys kosher
+			if(this.currentAreaRoutes[latlng] && this.currentAreaRoutes[latlng][imageId]) {
 				this.currentAreaRoutes[latlng][imageId].push(routeId) 
 			} else {
-				this.currentAreaRoutes[latlng] = {}
+				if(!this.currentAreaRoutes[latlng])
+					this.currentAreaRoutes[latlng] = {}
 				this.currentAreaRoutes[latlng][imageId] = [routeId]
 				var marker = new google.maps.Marker({
 					position: new google.maps.LatLng(latitude, longitude),
 					map: geo.currentMap
 				});
 				google.maps.event.addListener(marker,'click', function() {
-					if(geo.currentAreaRoutes[latlng].length > 1) {
+					if(Object.size(geo.currentAreaRoutes[latlng]) > 1) {
 						// popup with route images
-						return function() {
-							//currentAreaRoutes[latlng]
-							routeinfoWindow.setContent("22");
-							routeinfoWindow.open(geo.currentMap, marker);
-				        }
+						//currentAreaRoutes[latlng]
+						var content = "Multiple images<br/>"
+						for(var index in geo.currentAreaRoutes[latlng]) {
+							if(geo.currentAreaRoutes[latlng].hasOwnProperty(index))
+								content += "<a href='javascript:void(0);' onclick='geo.openRoutes(["+geo.currentAreaRoutes[latlng][index]+"],"+imageId+");'>route "+index+"</a><br/>"
+						}
+						routeinfoWindow.setContent(content);
+						routeinfoWindow.open(geo.currentMap, marker);
 					} else if (geo.currentAreaRoutes[latlng][imageId]) {
-						$.mobile.changePage('#route')
-						comm.getRoutesAndImage(geo.currentAreaRoutes[latlng][imageId], imageId)						
+						routeinfoWindow.close()
+						geo.openRoutes(geo.currentAreaRoutes[latlng][imageId], imageId)
 					}
 				});
 			}
+		},
+		openRoutes: function(routes, imageId) {
+			$.mobile.changePage('#route')
+			comm.getRoutesAndImage(routes, imageId)						
 		},
 		updateLocation: function () {
 			navigator.geolocation.getCurrentPosition(
@@ -77,9 +85,9 @@ var geo = (function() {
 		// get routes at the tapped climbing site
 		markAreaRoutes: function (areaId) {
 			$.getJSON('http://'+comm.server+'/api/route/getAreaRoutes/'+areaId, function(data) {
-				this.currentAreaRoutes = {}
+				geo.currentAreaRoutes = {}
 				$(data).each(function() {
-					geo.addRoute($(this).attr('latitude'), $(this).attr('longitude'), $(this).attr('routeId'), $(this).attr('imageId'))
+					geo.addRoute(this.latitude, this.longitude, this.routeId, this.imageId)
 				})
 			})
 		},
@@ -87,7 +95,7 @@ var geo = (function() {
 		markSitesNear: function (latitude, longitude) {
 			$.getJSON('http://'+comm.server+'/api/route/getAreas', function(data) {
 				$(data).each(function() {
-					geo.addArea($(this).attr('latitude'), $(this).attr('longitude'), $(this).attr('areaId'))
+					geo.addArea(this.latitude, this.longitude, this.areaId)
 				})
 			})
 		}
