@@ -77,8 +77,7 @@ var geo = (function() {
 //		  			alert('Latitude: '		  + position.coords.latitude		  + '\n' +
 //		  				  'Longitude: '		 + position.coords.longitude		 + '\n' +
 //		  				  'Accuracy: '		  + position.coords.accuracy		  + '\n' +
-				}, function(error) {  alert('code: '	+ error.code	+ '\n' +
-						  'message: ' + error.message + '\n'); },
+				}, function(error) {  },
 				{ maximumAge: 60000, timeout: 30000, enableHighAccuracy: true }
 			);
 		},

@@ -47,37 +47,40 @@ function newRoute() {
 	}
 }
 
-// stretch the footer to the bottom of the page [1. get rid of padding (prevents jerky adjustment) or 2. adjust for padding (keeps padding for nice inner layout)]
+// stretch the map to the footer and eliminate padding
 $(window).delegate('.content-adjust-no-padding', 'pageshow', function () {
 	$(this).find('[data-role="content"]').css('padding','0px'); // override the padding for the content so things don't overflow
-	var the_height = ($(window).height() - $(this).find('[data-role="header"]').height() - $(this).find('[data-role="footer"]').height())
-    $(this).height($(window).height()).find('[data-role="content"]').height(the_height)
+	var the_height = $(window).height() - $(this).find('[data-role="header"]').height() - $(this).find('[data-role="footer"]').height() -4
+    $(this).height(the_height).find('[data-role="content"]').height(the_height)
 	var the_width = $(window).width();
-    $(this).width($(window).width()).find('[data-role="content"]').width(the_width);
-});
-$(window).delegate('.content-adjust-for-padding', 'pageshow', function () {
-	var contentVerticalPadding = parseInt($(this).find('[data-role="content"]').css('padding-left'))+parseInt($(this).find('[data-role="content"]').css('padding-right'))
-	var the_height = ($(window).height() - $(this).find('[data-role="header"]').height() - $(this).find('[data-role="footer"]').height())
-    $(this).height($(window).height()).find('[data-role="content"]').height(the_height-contentVerticalPadding)
-    
-	var contentHorizontalPadding = parseInt($(this).find('[data-role="content"]').css('padding-top'))+parseInt($(this).find('[data-role="content"]').css('padding-bottom'))
-	var the_width = $(window).width();
-    $(this).width($(window).width()).find('[data-role="content"]').width(the_width-contentHorizontalPadding);
+    $(this).width(the_width).find('[data-role="content"]').width(the_width);
 });
 
-$(document).bind('pageinit',function(event) { 
-	currentClimage = new Climage(); 
-	$('#canvas').click(function(e) { 
-		currentClimage.addRoutePoint(e.clientX-$("#canvas").offset().left, e.clientY-$("#canvas").offset().top); 
-	}) 
-	$('#routeSelector').change(function() { 
-		getRoute($('#routeSelector option:selected').val()) 
-	})
-}); 
+$(window).delegate('#route', 'pageshow', function() {
+// 	var canvasWidth = Math.min(640,$('#route').width()-parseInt($('#route').find('[data-role="content"]').css('padding-left'))-parseInt($('#route').find('[data-role="content"]').css('padding-right')))
+// 	$('#canvas').width(canvasWidth); $('#canvas').height(canvasWidth*2/3)
+})
+
+var mapFirst = true
+$(window).delegate('#map', 'pageshow', function() {
+	if(mapFirst && currentClimage) {
+		resetMap()
+		mapFirst = false
+	}
+})
 
 $(document).bind('deviceready',function() {
 // $(document).bind('ready',function() {
+	currentClimage = new Climage();
+	$('#route #grade').attr('max',currentClimage.gradings[0].length)
 	resetMap()
+	$('#canvas').click(function(e) { 
+		currentClimage.addRoutePoint(e.clientX-$("#canvas").offset().left, e.clientY-$("#canvas").offset().top); 
+	})
+	$('#route #grade').bind('change', function(event,ui) {
+		$('#gradeYDS').attr('value',currentClimage.gradings[0][$(this).val()]);
+		$('#gradeBritish').attr('value',currentClimage.gradings[1][$(this).val()]);
+	})	
 });
 </script>
 
@@ -87,7 +90,7 @@ $(document).bind('deviceready',function() {
 
 
 	<div data-role="page" id="home" class="content-adjust-for-padding">
-		<div data-role="header">
+		<div data-role="header" data-position="fixed">
 			<div data-role="navbar">
 				<ul>
 					<li><a href="#home" class="ui-btn-active">Home</a></li>
@@ -98,15 +101,15 @@ $(document).bind('deviceready',function() {
 		</div>
 		<div data-role="content">
 			<p>VisionClimb</p>
-			<p onclick="comm.getRoutesAndImage([1,2,3],1)">Tap an area in the map and create a new climbing route there.</p>
+			Tap an area in the map and create a new climbing route there.
 		</div>
-		<div data-role="footer">
+		<div data-role="footer" data-position="fixed" data-tap-toggle="false">
 		</div>
 	</div>
 
 
 	<div data-role="page" id="map" class="content-adjust-no-padding">
-		<div data-role="header" id="map-header">
+		<div data-role="header" id="map-header" data-position="fixed">
 			<div data-role="navbar">
 				<ul>
 					<li><a href="#home">Home</a></li>
@@ -116,7 +119,7 @@ $(document).bind('deviceready',function() {
 			</div>		
 		</div>
 		<div data-role="content" id="map-square"></div>
-		<div data-role="footer" id="map-footer">
+		<div data-role="footer" id="map-footer" data-position="fixed" data-tap-toggle="false">
 			<div data-role="navbar">
 				<ul>
 					<li><a onclick="resetMap()">Reset</a></li>
@@ -128,7 +131,7 @@ $(document).bind('deviceready',function() {
 
 
 	<div data-role="page" id="route" class="content-adjust-for-padding">
-		<div data-role="header">
+		<div data-role="header" data-position="fixed">
 			<div data-role="navbar">
 				<ul>
 					<li><a href="#home">Home</a></li>
@@ -138,14 +141,18 @@ $(document).bind('deviceready',function() {
 			</div>		
 		</div>
 		<div data-role="content">
-			<canvas width="300" height="200" id="canvas" style="border:1px solid black;"></canvas>
+			<canvas id="canvas" style="border:1px solid black;" width="300" height="200"></canvas>
 			<label for="areaId">Area ID:</label><input type="text" id="areaId" value="0" readonly="readonly" />
 			<label for="latitude">Latitude:</label><input type="text" id="latitude" value="53" />
 			<label for="longitude">Longitude:</label><input type="text" id="longitude" value="0" />
 			<label for="routeName">Route name:</label><input type="text" id="routeName" value="a route" />
-			<div id="output"></div>
+			<label for="grade">Grade:</label><input type="range" name="slider" id="grade" value="1" min="1" max="1" />
+			<div class="ui-grid-a">
+				<div class="ui-block-a"><label for="gradeYDS">YDS:</label><input id="gradeYDS" type="text" readonly="readonly" /></div>
+				<div class="ui-block-b"><label for="gradeBritish">British:</label><input id="gradeBritish" type="text" readonly="readonly" /></div>
+			</div>
 		</div>
-		<div data-role="footer">
+		<div data-role="footer" data-position="fixed" data-tap-toggle="false">
 			<div data-role="navbar">
 				<ul>
 					<li><a onclick="currentClimage.save()">Save</a></li>

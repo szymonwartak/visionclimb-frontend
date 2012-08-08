@@ -11,6 +11,9 @@ var comm = (function() {
 					alert('saved')
 					geo.markAreaRoutes(currentClimage.areaId)
 				},
+				failure: function(data) {
+					alert('save failed')
+				},
 				contentType: 'application/x-www-form-urlencoded'
 			});
 		},
@@ -24,6 +27,9 @@ var comm = (function() {
 				},
 				success: function(data) {
 					currentClimage.set(data.imageId, data.image, data.routes)
+				},
+				failure: function(data) {
+					alert('get failed')
 				},
 				contentType: 'application/x-www-form-urlencoded'
 			});

@@ -10,14 +10,18 @@ function Climage() {
 	this.globalZoom = 6; this.areaZoom = 14;
 	this.existingRouteColour = '#0f0'; this.newRouteColour = '#00f';
 	this.areaId = 0; this.imageId = 0;
+	this.gradings = [
+	                 ['5.5','5.6','5.7','5.8','5.9','5.10a','5.10b','5.10c','5.10d','5.11a','5.11b','5.11c','5.11d','5.12a','5.12b','5.12c','5.12d','5.13a','5.13b','5.13c','5.13d','5.14a','5.14b','5.14c','5.14d'], // YDS
+	                 ['4a' ,'4b' ,'4c' ,'4c' ,'5a' ,'5a'   ,'5b'   ,'5b'   ,'5c'   ,'5c'   ,'5c'   ,'6a'   ,'6a'   ,'6a'   ,'6a'   ,'6b'   ,'6b'   ,'6b'  ,'6c'    ,'6c'   ,'6c'   ,'7a'   ,'7a'   ,'7b'   ,'7b'   ] // British (tech)
+	                ]
 };
 var climagePrototype = {
 	addRoutePoint: function( x,y ) {
-		this.setStyle(this.newRouteColour);
+		this.setRouteStyle(this.newRouteColour);
 		if(!this.previousX && !this.previousY) {
 			this.drawRouteStart(x ,y);
 		} else {
-			this.drawRouteLine(this.previousX, this.previousY, x, y);
+			this.drawLine(this.previousX, this.previousY, x, y);
 		}
 		this.previousX = x;
 		this.previousY = y;
@@ -30,13 +34,14 @@ var climagePrototype = {
 			$('#routeName').val("");
 			$('#latitude').val("")
 			$('#longitude').val("")
-			this.routePointsX = []; this.routePointsY = [];
+			this.routePointsX = []; this.routePointsY = []; this.grades = [];
 			$(routes).each(function() {
-				$('#routeName').val($(this).attr('name'))
-				$('#latitude').val($(this).attr('latitude'))
-				$('#longitude').val($(this).attr('longitude'))
-				that.routePointsX.push($.parseJSON($(this).attr('routePointsX')))
-				that.routePointsY.push($.parseJSON($(this).attr('routePointsY')))
+				$('#routeName').val(this.name)
+				$('#latitude').val(this.latitude)
+				$('#longitude').val(this.longitude)
+				that.routePointsX.push($.parseJSON(this.routePointsX))
+				that.routePointsY.push($.parseJSON(this.routePointsY))
+				that.grades.push(this.grade)
 			})
 			this.imageId = imageId
 			this.ctx.clearRect(0,0,300,200);
@@ -44,22 +49,61 @@ var climagePrototype = {
 		}
 	},
 	drawRoutePoints: function() {
-		this.setStyle(this.existingRouteColour);
 		for(var i2=0; i2<this.routePointsX.length; i2++) {
-			var xset = this.routePointsX[i2]; var yset = this.routePointsY[i2];
-			var previousX, previousY;			
+			var xset = this.routePointsX[i2]; var yset = this.routePointsY[i2]; 
+			var previousX, previousY;		
 			for(var i1=0; i1<xset.length; i1++) {
 				if(i1==0) {
+					this.setRouteStyle(this.existingRouteColour);
 					this.drawRouteStart(xset[0],yset[0]);
-					previousX = xset[0];
-					previousY = yset[0];
 				} else {
-					this.drawRouteLine(previousX, previousY, xset[i1], yset[i1])
-					previousX = xset[i1];
-					previousY = yset[i1];
+					this.setRouteStyle(this.existingRouteColour);
+					this.drawLine(previousX, previousY, xset[i1], yset[i1])
 				}
+				previousX = xset[i1];
+				previousY = yset[i1];
 			}
 		}
+		// now draw the labels so the route lines done overwrite them
+		var routeLabelsX = [], routeLabelsY = []
+		for(var i2=0; i2<this.routePointsX.length; i2++) {
+			var xset = this.routePointsX[i2]; var yset = this.routePointsY[i2]; 
+			var grade = this.grades[i2];
+			var previousX, previousY;		
+			var labelled = false
+			for(var i1=0; i1<xset.length; i1++) {
+				if(i1>0 && !labelled) {
+					var xdiff = xset[i1]-previousX
+					var ydiff = yset[i1]-previousY
+					for(var b1=0;b1<Math.sqrt(xdiff*xdiff+ydiff*ydiff);b1++) {
+						var overlapping = false
+						var proposedX = previousX, proposedY = previousY;
+						for(var b2=0;b2<routeLabelsX.length;b2++) {
+							proposedX = previousX+b1*xdiff
+							proposedY = previousY+b1*ydiff
+							if(routeLabelsX[b2]+this.labelWidth>proposedX && routeLabelsX[b2]-this.labelWidth<proposedX && 
+									routeLabelsY[b2]+this.labelHeight>proposedY && routeLabelsY[b2]-this.labelHeight<proposedY) {
+								overlapping = true
+								break
+							}
+						}
+						if(!overlapping) {
+							this.setLabelStyle()
+							this.drawLabel(grade, proposedX, proposedY)
+							labelled = true
+							routeLabelsX.push(proposedX); routeLabelsY.push(proposedY); 
+							break
+						}
+					}
+				}
+				previousX = xset[i1];
+				previousY = yset[i1];
+			}
+		}
+	},
+	drawLabel: function(grade, x, y) {
+		this.ctx.fillRect(x-this.labelWidth/2, y-this.labelHeight/2, this.labelWidth, this.labelHeight)
+		this.ctx.strokeText(grade, x-this.labelWidth/2+2, y)
 	},
 	drawImage: function(image) {
 		this.image = new Image();
@@ -70,21 +114,24 @@ var climagePrototype = {
 		};
 		this.image.src = image;
 	},
-	setStyle: function( strokeColour ) {
-		this.ctx.lineWidth = 2;
-		this.ctx.strokeStyle = strokeColour;
+	setRouteStyle: function( strokeColour ) {
+		this.ctx.lineWidth = 2
+		this.ctx.strokeStyle = strokeColour
+	},
+	setLabelStyle: function() {
+		this.labelWidth = 30; this.labelHeight = 15;
+		this.ctx.lineWidth = 1
+		this.ctx.strokeStyle = '#fff'
+		// for route labels
+		this.ctx.fillStyle = '#777';
+		this.ctx.font = '10px sans-serif';
+		this.ctx.textBaseline = 'middle';
 	},
 	drawRouteStart: function( x,y ) {
-		this.ctx.beginPath();
-		this.ctx.moveTo(x-this.Xsize, y-this.Xsize);
-		this.ctx.lineTo(x+this.Xsize, y+this.Xsize);
-		this.ctx.stroke();
-		this.ctx.beginPath();
-		this.ctx.moveTo(x+this.Xsize, y-this.Xsize);
-		this.ctx.lineTo(x-this.Xsize, y+this.Xsize);
-		this.ctx.stroke();
+		this.drawLine(x-this.Xsize, y-this.Xsize,x+this.Xsize, y+this.Xsize)
+		this.drawLine(x+this.Xsize, y-this.Xsize,x-this.Xsize, y+this.Xsize)
 	},
-	drawRouteLine: function ( x1,y1,x2,y2 ) {
+	drawLine: function ( x1,y1,x2,y2 ) {
 		this.ctx.beginPath();
 		this.ctx.moveTo(x1, y1);
 		this.ctx.lineTo(x2, y2);
@@ -137,6 +184,7 @@ var climagePrototype = {
 		}
 		var data = {
 				name: $('#routeName').val(),
+				grade: $('#gradeYDS').val(),
 				routePointsX: JSON.stringify(currentClimage.newRoutePointsX),
 				routePointsY: JSON.stringify(currentClimage.newRoutePointsY),
 				latitude: $('#latitude').val(),
