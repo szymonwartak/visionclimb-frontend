@@ -1,7 +1,6 @@
 var comm = (function() {
 	return {
-		server: "www.visionclimb.com",
-//		server: "localhost:8080",
+		server: (testEnv!=false ? "localhost:8080" : "www.visionclimb.com"),
 		saveRoute: function(saveFunction, climageData) {
 			$.ajax({
 				type: 'POST',
@@ -9,7 +8,10 @@ var comm = (function() {
 				data: climageData,
 				success: function(data) {
 					alert('saved')
+					// update the current state: 1) routes on map, and 2) routes on current image
 					geo.markAreaRoutes(currentClimage.areaId)
+					currentClimage.routes.push(data.routeId)
+					comm.getRoutesAndImage(currentClimage.routes, data.imageId)
 				},
 				failure: function(data) {
 					alert('save failed')
@@ -18,6 +20,7 @@ var comm = (function() {
 			});
 		},
 		getRoutesAndImage: function(routeNums, imageId) {
+			currentClimage.reset()
 			$.ajax({
 				type: 'POST',
 				url: 'http://'+this.server+'/api/route/getRoutesAndImage',

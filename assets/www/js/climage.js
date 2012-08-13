@@ -1,4 +1,5 @@
 function Climage() {
+	this.routes = [];
 	this.newRoutePointsX = [];
 	this.newRoutePointsY = [];
 	this.previousX = null;
@@ -11,11 +12,21 @@ function Climage() {
 	this.existingRouteColour = '#0f0'; this.newRouteColour = '#00f';
 	this.areaId = 0; this.imageId = 0;
 	this.gradings = [
-	                 ['5.5','5.6','5.7','5.8','5.9','5.10a','5.10b','5.10c','5.10d','5.11a','5.11b','5.11c','5.11d','5.12a','5.12b','5.12c','5.12d','5.13a','5.13b','5.13c','5.13d','5.14a','5.14b','5.14c','5.14d'], // YDS
-	                 ['4a' ,'4b' ,'4c' ,'4c' ,'5a' ,'5a'   ,'5b'   ,'5b'   ,'5c'   ,'5c'   ,'5c'   ,'6a'   ,'6a'   ,'6a'   ,'6a'   ,'6b'   ,'6b'   ,'6b'  ,'6c'    ,'6c'   ,'6c'   ,'7a'   ,'7a'   ,'7b'   ,'7b'   ] // British (tech)
+	                 ['','5.5','5.6','5.7','5.8','5.9','5.10a','5.10b','5.10c','5.10d','5.11a','5.11b','5.11c','5.11d','5.12a','5.12b','5.12c','5.12d','5.13a','5.13b','5.13c','5.13d','5.14a','5.14b','5.14c','5.14d'], // YDS
+	                 ['','4a' ,'4b' ,'4c' ,'4c' ,'5a' ,'5a'   ,'5b'   ,'5b'   ,'5c'   ,'5c'   ,'5c'   ,'6a'   ,'6a'   ,'6a'   ,'6a'   ,'6b'   ,'6b'   ,'6b'  ,'6c'    ,'6c'   ,'6c'   ,'7a'   ,'7a'   ,'7b'   ,'7b'   ] // British (tech)
 	                ]
 };
 var climagePrototype = {
+	reset: function() {
+		this.routes = [];
+		this.newRoutePointsX = [];
+		this.newRoutePointsY = [];
+		this.routePointsX = null;
+		this.routePointsY = null;
+		this.previousX = null;
+		this.previousY = null;
+		this.image = null;
+	},
 	addRoutePoint: function( x,y ) {
 		this.setRouteStyle(this.newRouteColour);
 		if(!this.previousX && !this.previousY) {
@@ -29,6 +40,7 @@ var climagePrototype = {
 		this.newRoutePointsY.push(y);
 	},
 	set: function( imageId, image, routes ) {
+		this.routes = $.parseJSON(routes)
 		var that = this
 		if( image && routes.length>0 ) {
 			$('#routeName').val("");
@@ -44,7 +56,7 @@ var climagePrototype = {
 				that.grades.push(this.grade)
 			})
 			this.imageId = imageId
-			this.ctx.clearRect(0,0,300,200);
+			this.ctx.clearRect(0,0,200,300);
 			this.drawImage(image);
 		}
 	},
@@ -109,7 +121,7 @@ var climagePrototype = {
 		this.image = new Image();
 		var that = this;
 		this.image.onload = function() {
-			that.ctx.drawImage(that.image,0,0,300,200);
+			that.ctx.drawImage(that.image,0,0,200,300);
 			that.drawRoutePoints();
 		};
 		this.image.src = image;
@@ -140,30 +152,34 @@ var climagePrototype = {
 	setGrade: function ( grade ) {
 		this.grade = grade;
 	},
-	takePhoto: function() {
-		this.imageId = 0
-		
-		var that = this;
-		navigator.camera.getPicture(
-			function(url) {
-				that.image = new Image();
-				that.image.onload = function() {
-					that.ctx.drawImage(that.image,0,0,300,200);
-					that.image = $('#canvas')[0].toDataURL();
-				};
-				that.image.src = url;
-			},
-			function(msg) { /* $('#output').append(msg); */ }, // fail
-			{ quality: 40, targetWidth: 300, targetHeight: 200 }
-		); 
-
-//		this.image = new Image();
-//		var that = this;
-//		this.image.onload = function() {
-//			that.ctx.drawImage(that.image,0,0,300,200);
-//			that.image = $('#canvas')[0].toDataURL();
-//		};
-//		this.image.src = 'images/asdf.png';		
+	takePhoto: function() {		
+		if(!testEnv) {
+			var that = this;
+			navigator.camera.getPicture(
+				function(url) { // successful photo
+					this.imageId = 0
+					$.mobile.changePage('#route')
+					currentClimage.clearRoutes()
+					that.image = new Image();
+					that.image.onload = function() {
+						that.ctx.drawImage(that.image,0,0,200,300);
+						that.image = $('#canvas')[0].toDataURL();
+					};
+					that.image.src = url;
+				},
+				function(msg) { /* $('#output').append(msg); */ }, // fail
+				{ quality: 40, targetWidth: 200, targetHeight: 300 }
+			); 
+		} else {
+			this.imageId = 0
+			this.image = new Image();
+			var that = this;
+			this.image.onload = function() {
+				that.ctx.drawImage(that.image,0,0,200,300);
+				that.image = $('#canvas')[0].toDataURL();
+			};
+			this.image.src = 'images/asdf.png';
+		}
 	},
 	clearRoutes: function () {
 		this.previousX = null;
@@ -180,6 +196,9 @@ var climagePrototype = {
 	save: function() {
 		if(!currentClimage.newRoutePointsX || currentClimage.newRoutePointsX.length<2) {
 			alert('mark the route with at least 2 points')
+			return
+		} else if($('#grade').val() == 1) {
+			alert('please select a grade for the route ( > 1 )')
 			return
 		}
 		var data = {

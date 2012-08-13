@@ -3,6 +3,7 @@
 <head>
 <title>climber</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<script type="text/javascript">var testEnv = false</script> 
 <script type="text/javascript" charset="utf-8" src="js/jquery.js"></script>
 <script type="text/javascript" charset="utf-8" src="js/jquery.mobile.js"></script>
 <link rel="stylesheet" type="text/css" href="css/jquery.mobile.css" />
@@ -22,6 +23,9 @@
 <script type="text/javascript" src="js/jquery.ui.map/jquery.ui.map.js"></script>
 <script type="text/javascript" src="js/jquery.ui.map/jquery.ui.map.services.js"></script>
 <style>
+.ui-page { // this gets rid of the flickering on page transitions on android 
+    -webkit-backface-visibility: hidden;
+}
 </style>
 
 <!--  setup climbing image, mapping, comm behaviour  -->
@@ -39,8 +43,6 @@ function resetMap() {
 }
 function newRoute() {
 	if(currentClimage.areaId != 0) {
-		$.mobile.changePage('#route')
-		currentClimage.clearRoutes()
 		currentClimage.takePhoto()		
 	} else {
 		alert('Please select area before adding route...')
@@ -57,6 +59,13 @@ $(window).delegate('.content-adjust-no-padding', 'pageshow', function () {
 });
 
 $(window).delegate('#route', 'pageshow', function() {
+	$('#grade').bind('change', function() {
+		$('#gradeYDS').attr('value',currentClimage.gradings[0][$(this).val()]);
+		$('#gradeBritish').attr('value',currentClimage.gradings[1][$(this).val()]);
+	})
+	$('#canvas').click(function(e) { 
+		currentClimage.addRoutePoint(e.clientX-$("#canvas").offset().left, e.clientY-$("#canvas").offset().top); 
+	})
 // 	var canvasWidth = Math.min(640,$('#route').width()-parseInt($('#route').find('[data-role="content"]').css('padding-left'))-parseInt($('#route').find('[data-role="content"]').css('padding-right')))
 // 	$('#canvas').width(canvasWidth); $('#canvas').height(canvasWidth*2/3)
 })
@@ -72,15 +81,11 @@ $(window).delegate('#map', 'pageshow', function() {
 $(document).bind('deviceready',function() {
 // $(document).bind('ready',function() {
 	currentClimage = new Climage();
-	$('#route #grade').attr('max',currentClimage.gradings[0].length)
+	$('#grade').attr('max',currentClimage.gradings[0].length)
 	resetMap()
-	$('#canvas').click(function(e) { 
-		currentClimage.addRoutePoint(e.clientX-$("#canvas").offset().left, e.clientY-$("#canvas").offset().top); 
-	})
-	$('#route #grade').bind('change', function(event,ui) {
-		$('#gradeYDS').attr('value',currentClimage.gradings[0][$(this).val()]);
-		$('#gradeBritish').attr('value',currentClimage.gradings[1][$(this).val()]);
-	})	
+	
+	currentClimage.setAreaId(1)
+	currentClimage.takePhoto()
 });
 </script>
 
@@ -141,7 +146,7 @@ $(document).bind('deviceready',function() {
 			</div>		
 		</div>
 		<div data-role="content">
-			<canvas id="canvas" style="border:1px solid black;" width="300" height="200"></canvas>
+			<canvas id="canvas" style="border:1px solid black;" width="200" height="300"></canvas>
 			<label for="areaId">Area ID:</label><input type="text" id="areaId" value="0" readonly="readonly" />
 			<label for="latitude">Latitude:</label><input type="text" id="latitude" value="53" />
 			<label for="longitude">Longitude:</label><input type="text" id="longitude" value="0" />

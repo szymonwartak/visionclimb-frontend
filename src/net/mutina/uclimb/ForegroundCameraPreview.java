@@ -36,7 +36,6 @@ public class ForegroundCameraPreview extends SurfaceView implements SurfaceHolde
     
 
     public void surfaceChanged(SurfaceHolder holder, int format, int w, int h) {
-
         if (mHolder.getSurface() == null){
           return;
         }
@@ -54,4 +53,6 @@ public class ForegroundCameraPreview extends SurfaceView implements SurfaceHolde
             Log.d(TAG, "Error starting camera preview: " + e.getMessage());
         }
     }
+    
+    
 }
