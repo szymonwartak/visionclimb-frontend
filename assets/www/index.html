@@ -3,7 +3,7 @@
 <head>
 <title>climber</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<script type="text/javascript">var testEnv = false</script> 
+<script type="text/javascript">var testEnv = true</script>
 <script type="text/javascript" charset="utf-8" src="js/jquery.js"></script>
 <script type="text/javascript" charset="utf-8" src="js/jquery.mobile.js"></script>
 <link rel="stylesheet" type="text/css" href="css/jquery.mobile.css" />
@@ -33,7 +33,8 @@
 <script type="text/javascript" charset="utf-8" src="js/climage.js"></script>
 <script type="text/javascript" charset="utf-8" src="js/rest.js"></script>
 <script type="text/javascript">
-var currentClimage; 
+var global = {}
+var currentClimage;
 
 function resetMap() {
 	currentClimage.setAreaId(0)
@@ -42,12 +43,70 @@ function resetMap() {
 	geo.markSitesNear(currentClimage.latitude, currentClimage.longitude)
 }
 function newRoute() {
-	if(currentClimage.areaId != 0) {
-		currentClimage.takePhoto()		
+	if(currentClimage.areaId == "0") {
+		if(global.latitude != null && global.longitude != null) {
+			$('#newRouteLink').attr('href','#areaDialog')
+			$('#newRouteLink').attr('data-rel','dialog')
+		} else {
+			alert("waiting for GPS...")
+		}
 	} else {
-		alert('Please select area before adding route...')
+		$('#newRouteLink').attr('href','#route')
+		$('#newRouteLink').attr('data-rel','')
+		currentClimage.takePhoto()
 	}
 }
+
+$(document).delegate('div[data-role=dialog]', 'pageinit', function() {
+	$.getJSON('http://'+comm.server+'/api/route/getAreas', function(data) {
+		$(data).each(function() {
+			$('#selectArea').append($("<option value='"+this.areaId+"'>"+this.name+"</option>"))
+		})
+	})
+	$('#areaSubmit').click(function() {
+		if($('#selectArea>option:selected')[0].value == "") {
+			var areaName = $('#areaName').val()
+			if(areaName != '') {
+				$.ajax({
+					type: 'POST',
+					url: 'http://'+comm.server+'/api/route/postArea',
+					data: {
+						name: areaName
+					},
+					success: function(data) {
+						alert('saved')
+						$('.ui-dialog').dialog('close')
+						currentClimage.takePhoto()
+					},
+					failure: function(data) {
+						alert('save failed')
+						$('.ui-dialog').dialog('close')
+					},
+					contentType: 'application/x-www-form-urlencoded'
+				});
+			} else {
+				alert("Enter name for new area")
+			}
+		} else {
+			currentClimage.areaId = $('#selectArea>option:selected')[0].value
+			currentClimage.takePhoto()
+		}
+	})
+	$('#selectArea').change(function() {
+		if($('#selectArea>option:selected')[0].value == "") {
+			$('#areaSubmit').val('Add area')
+			$('#areaSubmit').button("refresh")
+			$('#areaName').show()
+		} else {
+			$('#areaSubmit').val('Select')
+			$('#areaSubmit').button("refresh")
+			$('#areaName').hide()
+		}
+	})
+})
+
+function refreshRoutes() { currentClimage.refresh(); }
+function refreshMap() { geo.refresh(); }
 
 // stretch the map to the footer and eliminate padding
 $(window).delegate('.content-adjust-no-padding', 'pageshow', function () {
@@ -58,13 +117,18 @@ $(window).delegate('.content-adjust-no-padding', 'pageshow', function () {
     $(this).width(the_width).find('[data-role="content"]').width(the_width);
 });
 
+var previousCanvasClick = ""
 $(window).delegate('#route', 'pageshow', function() {
 	$('#grade').bind('change', function() {
 		$('#gradeYDS').attr('value',currentClimage.gradings[0][$(this).val()]);
 		$('#gradeBritish').attr('value',currentClimage.gradings[1][$(this).val()]);
 	})
-	$('#canvas').click(function(e) { 
-		currentClimage.addRoutePoint(e.clientX-$("#canvas").offset().left, e.clientY-$("#canvas").offset().top); 
+	$('#canvas').click(function(e) {
+		var clickHash = (e.clientX-$("#canvas").offset().left)+"_"+(e.clientY-$("#canvas").offset().top)
+		if(previousCanvasClick != clickHash) {
+			currentClimage.addRoutePoint(e.clientX-$("#canvas").offset().left, e.clientY-$("#canvas").offset().top);
+		}
+		previousCanvasClick = clickHash
 	})
 // 	var canvasWidth = Math.min(640,$('#route').width()-parseInt($('#route').find('[data-role="content"]').css('padding-left'))-parseInt($('#route').find('[data-role="content"]').css('padding-right')))
 // 	$('#canvas').width(canvasWidth); $('#canvas').height(canvasWidth*2/3)
@@ -78,20 +142,32 @@ $(window).delegate('#map', 'pageshow', function() {
 	}
 })
 
-$(document).bind('deviceready',function() {
-// $(document).bind('ready',function() {
+//$(document).bind('deviceready',function() {
+$(document).bind('ready',function() {
 	currentClimage = new Climage();
 	$('#grade').attr('max',currentClimage.gradings[0].length)
 	resetMap()
-	
-	currentClimage.setAreaId(1)
-	currentClimage.takePhoto()
 });
 </script>
 
 
 </head>
 <body>
+	<div data-role="page" id="areaDialog">
+		<div data-role="header">
+			adding new area
+		</div>
+		<div data-role="content">
+
+			<label for="areaName" class="select">Area:</label>
+			<select id="selectArea" data-mini="true">
+				<option value="">[new a11rea]</option>
+			</select>
+			<input type="text" id="areaName" value="" />
+			<input type="submit" id="areaSubmit" value="Add area" />
+
+		</div>
+	</div>
 
 
 	<div data-role="page" id="home" class="content-adjust-for-padding">
@@ -99,7 +175,7 @@ $(document).bind('deviceready',function() {
 			<div data-role="navbar">
 				<ul>
 					<li><a href="#home" class="ui-btn-active">Home</a></li>
-					<li><a href="#map">Map</a></li>
+					<li><a href="#map" data-prefetch>Map</a></li>
 					<li><a href="#route">Route</a></li>
 				</ul>
 			</div>
@@ -120,6 +196,7 @@ $(document).bind('deviceready',function() {
 					<li><a href="#home">Home</a></li>
 					<li><a href="#map" class="ui-btn-active">Map</a></li>
 					<li><a href="#route">Route</a></li>
+					<li><a onclick="refreshMap()">Refresh</a></li>
 				</ul>
 			</div>		
 		</div>
@@ -128,7 +205,7 @@ $(document).bind('deviceready',function() {
 			<div data-role="navbar">
 				<ul>
 					<li><a onclick="resetMap()">Reset</a></li>
-					<li><a onclick="newRoute()">New Route</a></li>
+					<li><a id="newRouteLink" onclick="newRoute()">New Route</a></li>
 				</ul>
 			</div>
 		</div>		
@@ -142,6 +219,7 @@ $(document).bind('deviceready',function() {
 					<li><a href="#home">Home</a></li>
 					<li><a href="#map">Map</a></li>
 					<li><a href="#route" class="ui-btn-active">Route</a></li>
+					<li><a onclick="refreshRoutes()">Refresh</a></li>
 				</ul>
 			</div>		
 		</div>
@@ -165,6 +243,7 @@ $(document).bind('deviceready',function() {
 			</div>
 		</div>		
 	</div>
+
 
 </body>
 </html>

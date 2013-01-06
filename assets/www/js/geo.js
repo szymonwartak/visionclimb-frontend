@@ -15,7 +15,8 @@ var geo = (function() {
 				zoom: zoom,
 				streetViewControl : false,
 				center: new google.maps.LatLng(latitude, longitude),
-				mapTypeId: google.maps.MapTypeId.SATELLITE//ROADMAP
+//				mapTypeId: google.maps.MapTypeId.SATELLITE
+				mapTypeId: google.maps.MapTypeId.ROADMAP
 			}
 			geo.currentMap = new google.maps.Map($('#map-square')[0], mapOptions);
 		},
@@ -69,6 +70,8 @@ var geo = (function() {
 		updateLocation: function () {
 			navigator.geolocation.getCurrentPosition(
 				function(position) {
+					global.latitude = position.coords.latitude
+					global.longitude = position.coords.longitude
 					currentClimage.latitude = position.coords.latitude
 					currentClimage.longitude = position.coords.longitude
 					geo.centreToLocation(currentClimage.latitude, currentClimage.longitude, currentClimage.globalZoom)

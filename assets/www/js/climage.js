@@ -1,31 +1,39 @@
+
+// wrapper for images with routes data and canvas functions
 function Climage() {
-	this.routes = [];
 	this.newRoutePointsX = [];
 	this.newRoutePointsY = [];
 	this.previousX = null;
 	this.previousY = null;
 	this.Xsize = 4;
 	this.image = null;
+	this.imageData = ""
 	this.latitude = 53; this.longitude = 0;
 	this.ctx = $('#canvas')[0].getContext('2d');
 	this.globalZoom = 6; this.areaZoom = 14;
 	this.existingRouteColour = '#0f0'; this.newRouteColour = '#00f';
-	this.areaId = 0; this.imageId = 0;
+	this.areaId = "0"; this.imageId = 0;
 	this.gradings = [
 	                 ['','5.5','5.6','5.7','5.8','5.9','5.10a','5.10b','5.10c','5.10d','5.11a','5.11b','5.11c','5.11d','5.12a','5.12b','5.12c','5.12d','5.13a','5.13b','5.13c','5.13d','5.14a','5.14b','5.14c','5.14d'], // YDS
 	                 ['','4a' ,'4b' ,'4c' ,'4c' ,'5a' ,'5a'   ,'5b'   ,'5b'   ,'5c'   ,'5c'   ,'5c'   ,'6a'   ,'6a'   ,'6a'   ,'6a'   ,'6b'   ,'6b'   ,'6b'  ,'6c'    ,'6c'   ,'6c'   ,'7a'   ,'7a'   ,'7b'   ,'7b'   ] // British (tech)
 	                ]
 };
 var climagePrototype = {
-	reset: function() {
-		this.routes = [];
+	clear: function() {
 		this.newRoutePointsX = [];
 		this.newRoutePointsY = [];
-		this.routePointsX = null;
-		this.routePointsY = null;
+		this.routePointSetsX = null;
+		this.routePointSetsY = null;
 		this.previousX = null;
 		this.previousY = null;
 		this.image = null;
+	},
+	reset: function() {
+		this.newRoutePointsX = [];
+		this.newRoutePointsY = [];
+		this.previousX = null;
+		this.previousY = null;
+		this.drawImage(this.imageData)
 	},
 	addRoutePoint: function( x,y ) {
 		this.setRouteStyle(this.newRouteColour);
@@ -39,21 +47,24 @@ var climagePrototype = {
 		this.newRoutePointsX.push(x);
 		this.newRoutePointsY.push(y);
 	},
+	addRoute: function(routePointsX, routePointsY, grade) {
+		this.routePointSetsX.push($.parseJSON(routePointsX))
+		this.routePointSetsY.push($.parseJSON(routePointsY))
+		this.grades.push(grade)
+		this.reset()
+	},
 	set: function( imageId, image, routes ) {
-		this.routes = $.parseJSON(routes)
-		var that = this
 		if( image && routes.length>0 ) {
 			$('#routeName').val("");
 			$('#latitude').val("")
 			$('#longitude').val("")
-			this.routePointsX = []; this.routePointsY = []; this.grades = [];
+			this.routePointSetsX = []; this.routePointSetsY = []; this.grades = [];
+			var that = this
 			$(routes).each(function() {
 				$('#routeName').val(this.name)
 				$('#latitude').val(this.latitude)
 				$('#longitude').val(this.longitude)
-				that.routePointsX.push($.parseJSON(this.routePointsX))
-				that.routePointsY.push($.parseJSON(this.routePointsY))
-				that.grades.push(this.grade)
+				that.addRoute(this.routePointsX, this.routePointsY, this.grade)
 			})
 			this.imageId = imageId
 			this.ctx.clearRect(0,0,200,300);
@@ -61,8 +72,8 @@ var climagePrototype = {
 		}
 	},
 	drawRoutePoints: function() {
-		for(var i2=0; i2<this.routePointsX.length; i2++) {
-			var xset = this.routePointsX[i2]; var yset = this.routePointsY[i2]; 
+		for(var i2=0; i2<this.routePointSetsX.length; i2++) {
+			var xset = this.routePointSetsX[i2]; var yset = this.routePointSetsY[i2];
 			var previousX, previousY;		
 			for(var i1=0; i1<xset.length; i1++) {
 				if(i1==0) {
@@ -78,8 +89,8 @@ var climagePrototype = {
 		}
 		// now draw the labels so the route lines done overwrite them
 		var routeLabelsX = [], routeLabelsY = []
-		for(var i2=0; i2<this.routePointsX.length; i2++) {
-			var xset = this.routePointsX[i2]; var yset = this.routePointsY[i2]; 
+		for(var i2=0; i2<this.routePointSetsX.length; i2++) {
+			var xset = this.routePointSetsX[i2]; var yset = this.routePointSetsY[i2];
 			var grade = this.grades[i2];
 			var previousX, previousY;		
 			var labelled = false
@@ -117,14 +128,15 @@ var climagePrototype = {
 		this.ctx.fillRect(x-this.labelWidth/2, y-this.labelHeight/2, this.labelWidth, this.labelHeight)
 		this.ctx.strokeText(grade, x-this.labelWidth/2+2, y)
 	},
-	drawImage: function(image) {
+	drawImage: function(imageSrc) {
 		this.image = new Image();
 		var that = this;
 		this.image.onload = function() {
 			that.ctx.drawImage(that.image,0,0,200,300);
+			that.imageData = $('#canvas')[0].toDataURL()
 			that.drawRoutePoints();
 		};
-		this.image.src = image;
+		this.image.src = imageSrc;
 	},
 	setRouteStyle: function( strokeColour ) {
 		this.ctx.lineWidth = 2
@@ -157,44 +169,26 @@ var climagePrototype = {
 			var that = this;
 			navigator.camera.getPicture(
 				function(url) { // successful photo
-					this.imageId = 0
+					that.imageId = 0
 					$.mobile.changePage('#route')
-					currentClimage.clearRoutes()
-					that.image = new Image();
-					that.image.onload = function() {
-						that.ctx.drawImage(that.image,0,0,200,300);
-						that.image = $('#canvas')[0].toDataURL();
-					};
-					that.image.src = url;
+					that.clear()
+					that.drawImage(url)
 				},
 				function(msg) { /* $('#output').append(msg); */ }, // fail
 				{ quality: 40, targetWidth: 200, targetHeight: 300 }
 			); 
 		} else {
 			this.imageId = 0
-			this.image = new Image();
-			var that = this;
-			this.image.onload = function() {
-				that.ctx.drawImage(that.image,0,0,200,300);
-				that.image = $('#canvas')[0].toDataURL();
-			};
-			this.image.src = 'images/asdf.png';
+			$.mobile.changePage('#route')
+			this.drawImage('images/asdf.png')
 		}
-	},
-	clearRoutes: function () {
-		this.previousX = null;
-		this.previousY = null;
-		this.newRoutePointsX = [];
-		this.newRoutePointsY = [];
-		this.routePointsX = [];
-		this.routePointsY = [];
 	},
 	setAreaId: function( areaId ) {
 		this.areaId = areaId
 		$('#areaId').val(areaId)
 	},
 	save: function() {
-		if(!currentClimage.newRoutePointsX || currentClimage.newRoutePointsX.length<2) {
+		if(!this.newRoutePointsX || this.newRoutePointsX.length<2) {
 			alert('mark the route with at least 2 points')
 			return
 		} else if($('#grade').val() == 1) {
@@ -204,17 +198,17 @@ var climagePrototype = {
 		var data = {
 				name: $('#routeName').val(),
 				grade: $('#gradeYDS').val(),
-				routePointsX: JSON.stringify(currentClimage.newRoutePointsX),
-				routePointsY: JSON.stringify(currentClimage.newRoutePointsY),
+				routePointsX: JSON.stringify(this.newRoutePointsX),
+				routePointsY: JSON.stringify(this.newRoutePointsY),
 				latitude: $('#latitude').val(),
 				longitude: $('#longitude').val(),
 				areaId: $('#areaId').val()
 			};
-		if(currentClimage.imageId==0) {
-			data['image'] = currentClimage.image
+		if(this.imageId==0) {
+			data['image'] = this.imageData
 			comm.saveRoute('postRouteWithImage', data)			
 		} else {
-			data['imageId'] = currentClimage.imageId
+			data['imageId'] = this.imageId
 			comm.saveRoute('postRoute', data)			
 		}
 	}
