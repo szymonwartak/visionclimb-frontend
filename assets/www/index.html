@@ -29,22 +29,16 @@
 </style>
 
 <!--  setup climbing image, mapping, comm behaviour  -->
+<script type="text/javascript" charset="utf-8" src="js/data.js"></script>
 <script type="text/javascript" charset="utf-8" src="js/geo.js"></script>
 <script type="text/javascript" charset="utf-8" src="js/climage.js"></script>
 <script type="text/javascript" charset="utf-8" src="js/rest.js"></script>
 <script type="text/javascript">
-var global = {}
-var currentClimage;
 
-function resetMap() {
-	currentClimage.setAreaId(0)
-	geo.updateLocation()
-	geo.centreToLocation(currentClimage.latitude, currentClimage.longitude, currentClimage.globalZoom)
-	geo.markSitesNear(currentClimage.latitude, currentClimage.longitude)
-}
+function resetMap() { geo.reset(); }
 function newRoute() {
-	if(currentClimage.areaId == "0") {
-		if(global.latitude != null && global.longitude != null) {
+	if(geo.areaId == "0") {
+		if(geo.latitude != null && geo.longitude != null) {
 			$('#newRouteLink').attr('href','#areaDialog')
 			$('#newRouteLink').attr('data-rel','dialog')
 		} else {
@@ -71,7 +65,9 @@ $(document).delegate('div[data-role=dialog]', 'pageinit', function() {
 					type: 'POST',
 					url: 'http://'+comm.server+'/api/route/postArea',
 					data: {
-						name: areaName
+						name: areaName,
+						latitude: geo.latitude,
+						longitude: geo.longitude
 					},
 					success: function(data) {
 						alert('saved')
@@ -88,7 +84,7 @@ $(document).delegate('div[data-role=dialog]', 'pageinit', function() {
 				alert("Enter name for new area")
 			}
 		} else {
-			currentClimage.areaId = $('#selectArea>option:selected')[0].value
+			geo.areaId = $('#selectArea>option:selected')[0].value
 			currentClimage.takePhoto()
 		}
 	})
@@ -144,7 +140,6 @@ $(window).delegate('#map', 'pageshow', function() {
 
 //$(document).bind('deviceready',function() {
 $(document).bind('ready',function() {
-	currentClimage = new Climage();
 	$('#grade').attr('max',currentClimage.gradings[0].length)
 	resetMap()
 });
@@ -161,7 +156,7 @@ $(document).bind('ready',function() {
 
 			<label for="areaName" class="select">Area:</label>
 			<select id="selectArea" data-mini="true">
-				<option value="">[new a11rea]</option>
+				<option value="">[new area]</option>
 			</select>
 			<input type="text" id="areaName" value="" />
 			<input type="submit" id="areaSubmit" value="Add area" />
@@ -225,9 +220,6 @@ $(document).bind('ready',function() {
 		</div>
 		<div data-role="content">
 			<canvas id="canvas" style="border:1px solid black;" width="200" height="300"></canvas>
-			<label for="areaId">Area ID:</label><input type="text" id="areaId" value="0" readonly="readonly" />
-			<label for="latitude">Latitude:</label><input type="text" id="latitude" value="53" />
-			<label for="longitude">Longitude:</label><input type="text" id="longitude" value="0" />
 			<label for="routeName">Route name:</label><input type="text" id="routeName" value="a route" />
 			<label for="grade">Grade:</label><input type="range" name="slider" id="grade" value="1" min="1" max="1" />
 			<div class="ui-grid-a">
