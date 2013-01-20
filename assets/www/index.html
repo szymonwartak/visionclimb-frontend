@@ -1,9 +1,24 @@
 <!DOCTYPE HTML>
 <html>
 <head>
+<script type="text/javascript">
+
+	var _gaq = _gaq || [];
+	_gaq.push(['_setAccount', 'UA-37811642-1']);
+	_gaq.push(['_trackPageview']);
+
+	(function() {
+		var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+		ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+		var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+	})();
+
+</script>
 <title>climber</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<script type="text/javascript">var testEnv = true</script>
+
+<!-- DEV --> <script type="text/javascript">var testEnv = true</script> <!-- DEV -->
+
 <script type="text/javascript" charset="utf-8" src="js/jquery.js"></script>
 <script type="text/javascript" charset="utf-8" src="js/jquery.mobile.js"></script>
 <link rel="stylesheet" type="text/css" href="css/jquery.mobile.css" />
@@ -52,41 +67,56 @@ function newRoute() {
 }
 
 $(document).delegate('div[data-role=dialog]', 'pageinit', function() {
-	$.getJSON('http://'+comm.server+'/api/route/getAreas', function(data) {
-		$(data).each(function() {
-			$('#selectArea').append($("<option value='"+this.areaId+"'>"+this.name+"</option>"))
+	geo.updateLocation(function() {
+		$.getJSON('http://'+comm.server+'/api/route/getAreas', function(data) {
+			var nearbyAreas = 0
+			$(data).each(function() {
+				if(Math.abs(parseFloat(allAreas.getArea(this.areaId).latitude)-geo.latitude) < geo.areaTolerance
+						&& Math.abs(parseFloat(allAreas.getArea(this.areaId).longitude)-geo.longitude) < geo.areaTolerance) {
+					$('#selectArea').append($("<option value='"+this.areaId+"'>"+this.name+"</option>"))
+					nearbyAreas += 1
+				}
+			})
+			if(nearbyAreas == 0) $('#areaError').css('display','inline')
+			else $('#areaError').css('display','none')
 		})
-	})
+	}, false)
 	$('#areaSubmit').click(function() {
-		if($('#selectArea>option:selected')[0].value == "") {
-			var areaName = $('#areaName').val()
-			if(areaName != '') {
-				$.ajax({
-					type: 'POST',
-					url: 'http://'+comm.server+'/api/route/postArea',
-					data: {
-						name: areaName,
-						latitude: geo.latitude,
-						longitude: geo.longitude
-					},
-					success: function(data) {
-						alert('saved')
-						$('.ui-dialog').dialog('close')
-						currentClimage.takePhoto()
-					},
-					failure: function(data) {
-						alert('save failed')
-						$('.ui-dialog').dialog('close')
-					},
-					contentType: 'application/x-www-form-urlencoded'
-				});
+		geo.updateLocation(function() {
+			var selectedAreaId = $('#selectArea>option:selected')[0].value
+			if(selectedAreaId == "") {
+				var areaName = $('#areaName').val()
+				if(areaName != '') {
+					$.ajax({
+						type: 'POST',
+						url: 'http://'+comm.server+'/api/route/postArea',
+						data: {
+							name: areaName,
+							latitude: geo.latitude,
+							longitude: geo.longitude
+						},
+						success: function(data) {
+							geo.areaId = data.areaId
+							allAreas.addArea(new Area(data.areaId, areaName, geo.latitude, geo.longitude))
+							geo.markArea(data.areaId)
+							alert('saved')
+							$('.ui-dialog').dialog('close')
+							currentClimage.takePhoto()
+						},
+						failure: function(data) {
+							alert('save failed')
+							$('.ui-dialog').dialog('close')
+						},
+						contentType: 'application/x-www-form-urlencoded'
+					});
+				} else {
+					alert("Enter name for new area")
+				}
 			} else {
-				alert("Enter name for new area")
+				geo.areaId = $('#selectArea>option:selected')[0].value
+				currentClimage.takePhoto()
 			}
-		} else {
-			geo.areaId = $('#selectArea>option:selected')[0].value
-			currentClimage.takePhoto()
-		}
+		}, true)
 	})
 	$('#selectArea').change(function() {
 		if($('#selectArea>option:selected')[0].value == "") {
@@ -135,9 +165,12 @@ $(window).delegate('#map', 'pageshow', function() {
 	if(mapFirst && currentClimage) {
 		resetMap()
 		mapFirst = false
+	} else {
+		geo.refresh()
 	}
 })
 
+// DEV //
 //$(document).bind('deviceready',function() {
 $(document).bind('ready',function() {
 	$('#grade').attr('max',currentClimage.gradings[0].length)
@@ -148,6 +181,7 @@ $(document).bind('ready',function() {
 
 </head>
 <body>
+
 	<div data-role="page" id="areaDialog">
 		<div data-role="header">
 			adding new area
@@ -159,11 +193,11 @@ $(document).bind('ready',function() {
 				<option value="">[new area]</option>
 			</select>
 			<input type="text" id="areaName" value="" />
+			<label class="error" id="areaError" style="display:none">No nearby areas. Create new area.</label>
 			<input type="submit" id="areaSubmit" value="Add area" />
 
 		</div>
 	</div>
-
 
 	<div data-role="page" id="home" class="content-adjust-for-padding">
 		<div data-role="header" data-position="fixed">
@@ -234,6 +268,8 @@ $(document).bind('ready',function() {
 				</ul>
 			</div>
 		</div>		
+
+
 	</div>
 
 

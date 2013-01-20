@@ -152,8 +152,10 @@ var currentClimage = (function() {
 				);
 			} else {
 				this.climageId = 0
-				$.mobile.changePage('#route')
-				this.drawImage('images/asdf.png')
+				setTimeout(function() {
+					$.mobile.changePage('#route')
+					currentClimage.drawImage('images/asdf.png')
+				}, 500)
 			}
 		},
 		save: function() {

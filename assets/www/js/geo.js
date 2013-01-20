@@ -9,19 +9,23 @@ var geo = (function() {
 		areaId:"0",
 		latitude:0,
 		longitude:0,
-		globalZoom:6,
+		globalZoom:7,
 		areaZoom:14,
+		currentZoom:7,
+		areaTolerance:0.01,
+		lastGpsRefresh:0,
 	// stores the route in the current area indexed by latitude+"_"+longitude
 		currentMap:null,
-		refresh: function() {
-
+		refresh: function(isForced) {
+			if(geo.currentZoom == geo.areaZoom) comm.getAreaClimages(geo.areaId)
+			else if(geo.currentZoom == geo.globalZoom) comm.getAreasNear(geo.latitude, geo.longitude)
 		},
 		reset: function() {
 			geo.areaId = 0
 			geo.updateLocation(function() {
 				geo.centreToLocation(geo.latitude, geo.longitude, geo.globalZoom)
 				comm.getAreasNear(geo.latitude, geo.longitude)
-			})
+			}, false)
 		},
 		centreToLocation: function(latitude, longitude, zoom) {
 			var mapOptions = {
@@ -83,21 +87,25 @@ var geo = (function() {
 			$.mobile.changePage('#route')
 			comm.getClimage(climageId)
 		},
-		updateLocation: function (callback) {
-			navigator.geolocation.getCurrentPosition(
-				function(position) {
-					geo.latitude = position.coords.latitude
-					geo.longitude = position.coords.longitude
-					geo.centreToLocation(geo.latitude, geo.longitude, geo.globalZoom)
-					$('#latitude').val(position.coords.latitude)
-					$('#longitude').val(position.coords.longitude)
-//		  			alert('Latitude: '		  + position.coords.latitude		  + '\n' +
-//		  				  'Longitude: '		 + position.coords.longitude		 + '\n' +
-//		  				  'Accuracy: '		  + position.coords.accuracy		  + '\n' +
-					if(callback != null) callback()
-				}, function(error) {  },
-				{ maximumAge: 60000, timeout: 30000, enableHighAccuracy: true }
-			);
+		updateLocation: function (callback, isSaving) {
+			var lastUpdateDiff = new Date().getTime() / 1000 - geo.lastGpsRefresh
+			if((isSaving==true && lastUpdateDiff>60) || lastUpdateDiff>300) {
+				navigator.geolocation.getCurrentPosition(
+					function(position) {
+						geo.lastGpsRefresh = new Date().getTime() / 1000
+						geo.latitude = position.coords.latitude
+						geo.longitude = position.coords.longitude
+						geo.centreToLocation(geo.latitude, geo.longitude, geo.globalZoom)
+	//		  			alert('Latitude: '		  + position.coords.latitude		  + '\n' +
+	//		  				  'Longitude: '		 + position.coords.longitude		 + '\n' +
+	//		  				  'Accuracy: '		  + position.coords.accuracy		  + '\n' +
+						if(callback != null) callback()
+					}, function(error) {  },
+					{ maximumAge: 60000, timeout: 30000, enableHighAccuracy: true }
+				);
+			} else {
+				if(callback != null) callback()
+			}
 		}
 	}
 })()
