@@ -17,10 +17,13 @@ var geo = (function() {
 	// stores the route in the current area indexed by latitude+"_"+longitude
 		currentMap:null,
 		refresh: function(isForced) {
+			routeinfoWindow.close()
 			if(geo.currentZoom == geo.areaZoom) comm.getAreaClimages(geo.areaId)
 			else if(geo.currentZoom == geo.globalZoom) comm.getAreasNear(geo.latitude, geo.longitude)
 		},
 		reset: function() {
+			routeinfoWindow.close()
+			geo.currentZoom = geo.globalZoom
 			geo.areaId = 0
 			geo.updateLocation(function() {
 				geo.centreToLocation(geo.latitude, geo.longitude, geo.globalZoom)
@@ -45,6 +48,7 @@ var geo = (function() {
 				title:area.name
 			});
 			google.maps.event.addListener(marker,'click', function() {
+				geo.currentZoom = geo.areaZoom
 				geo.areaId = areaId
 				geo.centreToLocation(area.latitude, area.longitude, geo.areaZoom)
 				comm.getAreaClimages(areaId)
@@ -93,8 +97,8 @@ var geo = (function() {
 				navigator.geolocation.getCurrentPosition(
 					function(position) {
 						geo.lastGpsRefresh = new Date().getTime() / 1000
-						geo.latitude = position.coords.latitude
-						geo.longitude = position.coords.longitude
+						geo.latitude = Math.round(position.coords.latitude*100)/100
+						geo.longitude = Math.round(position.coords.longitude*100)/100
 						geo.centreToLocation(geo.latitude, geo.longitude, geo.globalZoom)
 	//		  			alert('Latitude: '		  + position.coords.latitude		  + '\n' +
 	//		  				  'Longitude: '		 + position.coords.longitude		 + '\n' +

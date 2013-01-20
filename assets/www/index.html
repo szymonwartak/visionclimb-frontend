@@ -131,8 +131,11 @@ $(document).delegate('div[data-role=dialog]', 'pageinit', function() {
 	})
 })
 
-function refreshRoutes() { currentClimage.refresh(); }
-function refreshMap() { geo.refresh(); }
+function refreshRoutes() { comm.getClimage(currentClimage.climageId, true) }
+function refreshMap() {
+	if(geo.currentZoom == geo.globalZoom) comm.getAreasNear(geo.latitude, geo.longitude, true)
+	else comm.getAreaClimages(geo.areaId, true)
+}
 
 // stretch the map to the footer and eliminate padding
 $(window).delegate('.content-adjust-no-padding', 'pageshow', function () {
