@@ -173,6 +173,7 @@ $(window).delegate('#map', 'pageshow', function() {
 // DEV //
 //$(document).bind('deviceready',function() {
 $(document).bind('ready',function() {
+	$.mobile.changePage('#home')
 	$('#grade').attr('max',currentClimage.gradings[0].length)
 	resetMap()
 });

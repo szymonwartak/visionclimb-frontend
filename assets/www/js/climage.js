@@ -42,9 +42,9 @@ var currentClimage = (function() {
 			this.refresh()
 		},
 		drawRoutePoints: function() {
-			var routes = allImages.getRoutes(this.climageId)
-			for(var i2=0; i2<routes.length; i2++) {
-				var xset = allRoutes.getRoute(routes[i2]).routePointsX; var yset = allRoutes.getRoute(routes[i2]).routePointsY;
+			var routeIds = allImages.getRouteIds(this.climageId)
+			for(var routeId in routeIds) {
+				var xset = allRoutes.getRoute(routeId).routePointsX; var yset = allRoutes.getRoute(routeId).routePointsY;
 				var previousX, previousY;
 				for(var i1=0; i1<xset.length; i1++) {
 					if(i1==0) {
@@ -60,9 +60,9 @@ var currentClimage = (function() {
 			}
 			// now draw the labels so the route lines done overwrite them
 			var routeLabelsX = [], routeLabelsY = []
-			for(var i2=0; i2<routes.length; i2++) {
-				var xset = allRoutes.getRoute(routes[i2]).routePointsX; var yset = allRoutes.getRoute(routes[i2]).routePointsY;
-				var grade = allRoutes.getRoute(routes[i2]).grade
+			for(var routeId in routeIds) {
+				var xset = allRoutes.getRoute(routeId).routePointsX; var yset = allRoutes.getRoute(routeId).routePointsY;
+				var grade = allRoutes.getRoute(routeId).grade
 				var previousX, previousY;
 				var labelled = false
 				for(var i1=0; i1<xset.length; i1++) {

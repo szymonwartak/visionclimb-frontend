@@ -72,13 +72,13 @@ var geo = (function() {
 						var content = "Multiple images<br/>"
 						for(var i2 in climagesLatLng[this.markerIndex].climage) {
 							if(climagesLatLng[this.markerIndex].climage.hasOwnProperty(i2))
-								content += "<a href='javascript:void(0);' onclick='geo.openRoutes(\""+climagesLatLng[this.markerIndex].climage[i2].climageId+"\");return false;'>route "+i2+"</a><br/>"
-						}                                                      //geo.openRoutes("+climagesLatLng[this.markerIndex].climage[i2].climageId+")
+								content += "<a href='javascript:void(0);' onclick='geo.openRoutes(\""+climagesLatLng[this.markerIndex].climage[i2].id+"\");return false;'>route "+i2+"</a><br/>"
+						}
 						routeinfoWindow.setContent(content);
 						routeinfoWindow.open(geo.currentMap, marker);
 					} else {
 						routeinfoWindow.close()
-						geo.openRoutes(climagesLatLng[this.markerIndex].climage[0].climageId)
+						geo.openRoutes(climagesLatLng[this.markerIndex].climage[0].id)
 					}
 				});
 			}
