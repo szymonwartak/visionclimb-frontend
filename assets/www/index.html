@@ -25,6 +25,7 @@
 <link rel="stylesheet" type="text/css" href="css/jquery.mobile.structure.css" />
 <link rel="stylesheet" type="text/css" href="css/jquery.mobile.theme.css" />
 <script type="text/javascript" charset="utf-8" src="js/phonegap.js"></script>
+
 <script type="text/javascript" charset="utf-8" src="js/predef.js"></script>
 
 <!-- foreground camera for android background closing bug -->
@@ -48,6 +49,17 @@
 <script type="text/javascript" charset="utf-8" src="js/geo.js"></script>
 <script type="text/javascript" charset="utf-8" src="js/climage.js"></script>
 <script type="text/javascript" charset="utf-8" src="js/rest.js"></script>
+
+<!-- LOGGING -->
+<script type="text/javascript" src="js/log4javascript.js"></script>
+<script type="text/javascript">
+	var log = log4javascript.getDefaultLogger();
+	var ajaxAppender = new log4javascript.AjaxAppender(comm.server+"/api/route/log/"+USERID)
+	ajaxAppender.setTimed(true)
+	ajaxAppender.setTimerInterval(2000)
+	log.addAppender(ajaxAppender)
+</script>
+
 <script type="text/javascript">
 
 function resetMap() { geo.reset(); }
@@ -68,7 +80,7 @@ function newRoute() {
 
 $(document).delegate('div[data-role=dialog]', 'pageinit', function() {
 	geo.updateLocation(function() {
-		$.getJSON('http://'+comm.server+'/api/route/getAreas', function(data) {
+		$.getJSON(comm.server+'/api/route/getAreas', function(data) {
 			var nearbyAreas = 0
 			$(data).each(function() {
 				if(Math.abs(parseFloat(allAreas.getArea(this.areaId).latitude)-geo.latitude) < geo.areaTolerance
@@ -89,8 +101,9 @@ $(document).delegate('div[data-role=dialog]', 'pageinit', function() {
 				if(areaName != '') {
 					$.ajax({
 						type: 'POST',
-						url: 'http://'+comm.server+'/api/route/postArea',
+						url: comm.server+'/api/route/postArea',
 						data: {
+							userId:USERID,
 							name: areaName,
 							latitude: geo.latitude,
 							longitude: geo.longitude

@@ -2,30 +2,40 @@
 // wrapper for images with routes data and canvas functions
 var currentClimage = (function() {
 	return {
-		newRoutePointsX:[],
-		newRoutePointsY:[],
-		previousX:null,
-		previousY:null,
+		// const
 		Xsize:4,
-		climageId:0,
-		imageData:"",
 		existingRouteColour:'#0f0',
 		newRouteColour:'#00f',
 		gradings:[
 			['','5.5','5.6','5.7','5.8','5.9','5.10a','5.10b','5.10c','5.10d','5.11a','5.11b','5.11c','5.11d','5.12a','5.12b','5.12c','5.12d','5.13a','5.13b','5.13c','5.13d','5.14a','5.14b','5.14c','5.14d'], // YDS
 			['','4a' ,'4b' ,'4c' ,'4c' ,'5a' ,'5a'   ,'5b'   ,'5b'   ,'5c'   ,'5c'   ,'5c'   ,'6a'   ,'6a'   ,'6a'   ,'6a'   ,'6b'   ,'6b'   ,'6b'  ,'6c'    ,'6c'   ,'6c'   ,'7a'   ,'7a'   ,'7b'   ,'7b'   ] // British (tech)
 		],
+		// var
+		newRoutePointsX:[],
+		newRoutePointsY:[],
+		previousX:null,
+		previousY:null,
+		climageId:0,
+		imageData:"",
+		vars: function() {
+			return "CLIMAGE(climageId="+currentClimage.climageId+",newRoutePointsX="+(!newRoutePointsX ? "NULL" : arrayToString(newRoutePointsX))
+					+",newRoutePointsY="+(!newRoutePointsY ? "NULL" : arrayToString(newRoutePointsY))+",previousX="+previousX+",previousY="+previousY
+					+",imageData="+(!currentClimage.imageData ? "NULL" : currentClimage.imageData.substring(0,15))+")"
+		},
 		ctx: function() { return $('#canvas')[0].getContext('2d'); },
 		clearData: function() {
+			log.debug("currentClimage\tclearData()\t"+currentClimage.vars())
 			this.newRoutePointsX = [];
 			this.newRoutePointsY = [];
 			this.previousX = null;
 			this.previousY = null;
 		},
 		refresh: function() {
+			log.debug("currentClimage\trefresh()\t"+currentClimage.vars())
 			this.drawImage(allImages.getImage(this.climageId).imageData)
 		},
 		addRoutePoint: function( x,y ) {
+			log.debug("currentClimage\taddRoutePoint(x="+x+",y="+y+")\t"+currentClimage.vars())
 			this.setRouteStyle(this.newRouteColour);
 			if(!this.previousX && !this.previousY) {
 				this.drawRouteStart(x ,y);
@@ -38,10 +48,12 @@ var currentClimage = (function() {
 			this.newRoutePointsY.push(y);
 		},
 		set: function( climageId ) {
+			log.debug("currentClimage\tset(climageId="+climageId+")\t"+currentClimage.vars())
 			this.climageId = climageId
 			this.refresh()
 		},
 		drawRoutePoints: function() {
+			log.debug("currentClimage\tdrawRoutePoints()\t"+currentClimage.vars())
 			var routeIds = allImages.getRouteIds(this.climageId)
 			for(var routeId in routeIds) {
 				var xset = allRoutes.getRoute(routeId).routePointsX; var yset = allRoutes.getRoute(routeId).routePointsY;
@@ -96,10 +108,14 @@ var currentClimage = (function() {
 			}
 		},
 		drawLabel: function(grade, x, y) {
+			log.debug("currentClimage\tdrawLabel(grade="+grade+",x="+x+",y="+y+")\t"+currentClimage.vars())
 			this.ctx().fillRect(x-this.labelWidth/2, y-this.labelHeight/2, this.labelWidth, this.labelHeight)
 			this.ctx().strokeText(grade, x-this.labelWidth/2+2, y)
 		},
 		drawImage: function(imageSrc) {
+			log.debug("currentClimage\tdrawImage(imageSrc="
+					+(!imageSrc ? "NULL" : imageSrc.substring(0,Math.min(imageSrc.length, 20)))
+					+")\t"+currentClimage.vars())
 			this.clearData()
 			var image = new Image();
 			var that = this;
@@ -113,10 +129,12 @@ var currentClimage = (function() {
 			image.src = imageSrc;
 		},
 		setRouteStyle: function( strokeColour ) {
+			log.debug("currentClimage\tsetRouteStyle(strokeColour="+strokeColour+")\t"+currentClimage.vars())
 			this.ctx().lineWidth = 2
 			this.ctx().strokeStyle = strokeColour
 		},
 		setLabelStyle: function() {
+			log.debug("currentClimage\tsetLabelStyle()\t"+currentClimage.vars())
 			this.labelWidth = 30; this.labelHeight = 15;
 			this.ctx().lineWidth = 1
 			this.ctx().strokeStyle = '#fff'
@@ -126,19 +144,23 @@ var currentClimage = (function() {
 			this.ctx().textBaseline = 'middle';
 		},
 		drawRouteStart: function( x,y ) {
+			log.debug("currentClimage\tdrawRouteStart(x="+x+",y="+y+")\t"+currentClimage.vars())
 			this.drawLine(x-this.Xsize, y-this.Xsize,x+this.Xsize, y+this.Xsize)
 			this.drawLine(x+this.Xsize, y-this.Xsize,x-this.Xsize, y+this.Xsize)
 		},
 		drawLine: function ( x1,y1,x2,y2 ) {
+			log.debug("currentClimage\tdrawLine(x1="+x1+",y1="+y1+",x2="+x2+",y2="+y2+")\t"+currentClimage.vars())
 			this.ctx().beginPath();
 			this.ctx().moveTo(x1, y1);
 			this.ctx().lineTo(x2, y2);
 			this.ctx().stroke();
 		},
 		setGrade: function ( grade ) {
+			log.debug("currentClimage\tsetGrade(grade="+grade+")\t"+currentClimage.vars())
 			this.grade = grade;
 		},
 		takePhoto: function() {
+			log.debug("currentClimage\ttakePhoto()\t"+currentClimage.vars())
 			if(!testEnv) {
 				var that = this;
 				navigator.camera.getPicture(
@@ -159,6 +181,7 @@ var currentClimage = (function() {
 			}
 		},
 		save: function() {
+			log.debug("currentClimage\tsave()\t"+currentClimage.vars())
 			if(!this.newRoutePointsX || this.newRoutePointsX.length<2) {
 				alert('mark the route with at least 2 points')
 				return
