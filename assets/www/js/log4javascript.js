@@ -1,1 +1,1 @@
-log4javascript-1.4.3/log4javascript.js
+log4javascript-1.4.6/log4javascript.js

@@ -1,7 +1,7 @@
 var savedData = null
 var comm = (function() {
 	return {
-		server: (testEnv!=false ? "" : "http://www.visionclimb.com"),
+		server: (testEnv!=false ? "http://localhost:9000" : "http://www.visionclimb.com"),
 		saveRoute: function(saveFunction, climageData) {
 			log.debug("comm\tsaveRoute(saveFunction="+saveFunction+",climageData={" +
 					",name="+climageData['name']+
