@@ -59,16 +59,16 @@ Area.prototype = {
 	toString:function() { return "id="+this.id+",name="+this.name+",latitude="+this.latitude+",longitude="+this.longitude }
 }
 
-var Climage = function(id, name, latitude, longitude, imageData) {
-	this.latitude = latitude; this.longitude = longitude; this.id = id; this.name = name; this.imageData = imageData;
+var Climage = function(id, name, latitude, longitude, imageId) {
+	this.latitude = latitude; this.longitude = longitude; this.id = id; this.name = name; this.imageId = imageId;
 }
 Climage.prototype = {
 	fields:["1","2"],
 	toString:function() {
-		return "id="+this.id+",name="+this.name+",latitude="+this.latitude+",longitude="+this.longitude+",imageData="+(this.imageData ? this.imageData.substring(0,20): "null")
+		return "id="+this.id+",name="+this.name+",latitude="+this.latitude+",longitude="+this.longitude+",imageId="+(this.imageId ? this.imageId: "null")
 	},
 	mergeWith:function(otherClimage) {
-		this.imageData = !this.imageData ? (!otherClimage ? null : otherClimage.imageData) : this.imageData
+		this.imageId = !this.imageId ? (!otherClimage ? null : otherClimage.imageId) : this.imageId
 		return this;
 	}
 }

@@ -9,7 +9,7 @@ var geo = (function() {
 		// const
 		globalZoom:7,
 		areaZoom:14,
-		areaTolerance:0.01,
+		areaTolerance:0.02,
 		// var
 		areaId:"0",
 		latitude:0,

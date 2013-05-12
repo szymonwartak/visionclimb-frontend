@@ -18,6 +18,7 @@ var comm = (function() {
 			$.ajax({
 				type: 'POST',
 				url: comm.server+'/api/route/'+saveFunction,
+                dataType: "json",
 				data: climageData,
 				success: function(data) {
 					log.debug("comm\tsaveRoute_success(climageId="+data.climageId+",routeId="+data.routeId+")")
@@ -40,16 +41,16 @@ var comm = (function() {
 			}
 			if(isForceRefresh || !allImages.getImage(climageId).imageData) {
 				log.debug("comm\tONLINE\tgetClimage(climageId="+climageId+",isForceRefresh="+isForceRefresh+")")
-				$.getJSON(comm.server+'/api/route/getClimage/'+climageId+'/'+USERID, function(data) {
-					if(data.climageId == null) {
+				$.getJSON(comm.server+'/api/route/getClimage/'+climageId+'/'+USERID, function(climage) {
+					if(climage.climageId == null) {
 						alert("Error - climageId null");
 					} else {
 						// update model
-						allAreas.addClimage(data.climageId.substring(0,1), new Climage(data.climageId, data.name, data.latitude, data.longitude, data.imageData))
-						$(data.routes).each(function() {
-							allImages.addRoute(data.climageId, new Route(this.routeId, this.name, $.parseJSON(this.routePointsX), $.parseJSON(this.routePointsY), this.grade))
+						allAreas.addClimage(climage.climageId.substring(0,1), new Climage(climage.climageId, climage.name, climage.latitude, climage.longitude, climage.imageId))
+						$(climage.routes).each(function() {
+							allImages.addRoute(climage.climageId, new Route(this.routeId, this.name, $.parseJSON(this.routePointsX), $.parseJSON(this.routePointsY), this.grade))
 						})
-						updateView(data.climageId)
+                        updateView(climage.climageId)
 					}
 				});
 			} else {
@@ -66,8 +67,8 @@ var comm = (function() {
 				log.debug("comm\tONLINE\tgetClimage(areaId="+areaId+",isForceRefresh="+isForceRefresh+")")
 				$.getJSON(comm.server+'/api/route/getAreaClimages/'+areaId+'/'+USERID, function(data) {
 					var climages = []
-					$(data).each(function() {
-						var climage = new Climage(this.climageId, this.name, this.latitude, this.longitude)
+					$.each(data, function() {
+						var climage = new Climage(this.climageId, this.name, this.latitude, this.longitude, this.imageId)
 						allAreas.addClimage(areaId, climage)
 						climages.push(climage)
 					})
@@ -85,11 +86,11 @@ var comm = (function() {
 			}
 			if(isForceRefresh || Object.size(allAreas.getAreas())==0) {
 				log.debug("comm\tONLINE\tgetAreasNear(latitude="+latitude+",longitude="+longitude+",isForceRefresh="+isForceRefresh+")")
-				$.getJSON(comm.server+'/api/route/getAreas'+'/'+USERID, function(data) {
-					$(data).each(function() {
+				$.getJSON(comm.server+'/api/route/getAreas/'+USERID, function(data) {
+                    $.each(data, function() {
 						allAreas.addArea(new Area(this.areaId, this.name, this.latitude, this.longitude))
-						updateView(this.areaId)
-					})
+                        updateView(this.areaId)
+                    })
 				})
 			} else {
 				log.debug("comm\tOFFLINE\tgetAreasNear(latitude="+latitude+",longitude="+longitude+",isForceRefresh="+isForceRefresh+")")

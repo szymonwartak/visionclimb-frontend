@@ -39,7 +39,7 @@
 <script type="text/javascript" src="js/jquery.ui.map/jquery.ui.map.js"></script>
 <script type="text/javascript" src="js/jquery.ui.map/jquery.ui.map.services.js"></script>
 <style>
-.ui-page { // this gets rid of the flickering on page transitions on android 
+.ui-page { // this gets rid of the flickering on page transitions on android
     -webkit-backface-visibility: hidden;
 }
 </style>
@@ -78,11 +78,11 @@ function newRoute() {
 	}
 }
 
-$(document).delegate('div[data-role=dialog]', 'pageinit', function() {
+$(window).delegate('div[data-role=dialog]', 'pageinit', function() {
 	geo.updateLocation(function() {
-		$.getJSON(comm.server+'/api/route/getAreas', function(data) {
+		$.getJSON(comm.server+'/api/route/getAreas/'+USERID, function(data) {
 			var nearbyAreas = 0
-			$(data).each(function() {
+			$.each(data, function() {
 				if(Math.abs(parseFloat(allAreas.getArea(this.areaId).latitude)-geo.latitude) < geo.areaTolerance
 						&& Math.abs(parseFloat(allAreas.getArea(this.areaId).longitude)-geo.longitude) < geo.areaTolerance) {
 					$('#selectArea').append($("<option value='"+this.areaId+"'>"+this.name+"</option>"))
@@ -102,6 +102,7 @@ $(document).delegate('div[data-role=dialog]', 'pageinit', function() {
 					$.ajax({
 						type: 'POST',
 						url: comm.server+'/api/route/postArea',
+                        dataType: "json",
 						data: {
 							userId:USERID,
 							name: areaName,
@@ -123,7 +124,7 @@ $(document).delegate('div[data-role=dialog]', 'pageinit', function() {
 						contentType: 'application/x-www-form-urlencoded'
 					});
 				} else {
-					alert("Enter name for new area")
+					alert("Enter name for new area..")
 				}
 			} else {
 				geo.areaId = $('#selectArea>option:selected')[0].value
@@ -244,7 +245,7 @@ $(document).bind('ready',function() {
 					<li><a href="#route">Route</a></li>
 					<li><a onclick="refreshMap()">Refresh</a></li>
 				</ul>
-			</div>		
+			</div>
 		</div>
 		<div data-role="content" id="map-square"></div>
 		<div data-role="footer" id="map-footer" data-position="fixed" data-tap-toggle="false">
@@ -254,7 +255,7 @@ $(document).bind('ready',function() {
 					<li><a id="newRouteLink" onclick="newRoute()">New Route</a></li>
 				</ul>
 			</div>
-		</div>		
+		</div>
 	</div>
 
 
@@ -267,7 +268,7 @@ $(document).bind('ready',function() {
 					<li><a href="#route" class="ui-btn-active">Route</a></li>
 					<li><a onclick="refreshRoutes()">Refresh</a></li>
 				</ul>
-			</div>		
+			</div>
 		</div>
 		<div data-role="content">
 			<canvas id="canvas" style="border:1px solid black;" width="200" height="300"></canvas>
@@ -284,7 +285,7 @@ $(document).bind('ready',function() {
 					<li><a onclick="currentClimage.save()">Save</a></li>
 				</ul>
 			</div>
-		</div>		
+		</div>
 
 
 	</div>

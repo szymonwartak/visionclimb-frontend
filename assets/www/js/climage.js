@@ -16,11 +16,13 @@ var currentClimage = (function() {
 		previousX:null,
 		previousY:null,
 		climageId:0,
+		s3bucket:"https://s3-eu-west-1.amazonaws.com/climage.images/",
+		imageId:"",
 		imageData:"",
 		vars: function() {
-			return "CLIMAGE(climageId="+currentClimage.climageId+",newRoutePointsX="+(!newRoutePointsX ? "NULL" : arrayToString(newRoutePointsX))
-					+",newRoutePointsY="+(!newRoutePointsY ? "NULL" : arrayToString(newRoutePointsY))+",previousX="+previousX+",previousY="+previousY
-					+",imageData="+(!currentClimage.imageData ? "NULL" : currentClimage.imageData.substring(0,15))+")"
+			return "CLIMAGE(climageId="+currentClimage.climageId+",newRoutePointsX="+(!currentClimage.newRoutePointsX ? "NULL" : arrayToString(currentClimage.newRoutePointsX))
+					+",newRoutePointsY="+(!currentClimage.newRoutePointsY ? "NULL" : arrayToString(currentClimage.newRoutePointsY))+",previousX="+currentClimage.previousX+",previousY="+currentClimage.previousY
+					+",imageId="+(!currentClimage.imageId ? "NULL" : currentClimage.imageId.substring(0,15))+")"
 		},
 		ctx: function() { return $('#canvas')[0].getContext('2d'); },
 		clearData: function() {
@@ -32,7 +34,7 @@ var currentClimage = (function() {
 		},
 		refresh: function() {
 			log.debug("currentClimage\trefresh()\t"+currentClimage.vars())
-			this.drawImage(allImages.getImage(this.climageId).imageData)
+			this.drawImage(currentClimage.s3bucket+allImages.getImage(this.climageId).imageId)
 		},
 		addRoutePoint: function( x,y ) {
 			log.debug("currentClimage\taddRoutePoint(x="+x+",y="+y+")\t"+currentClimage.vars())
@@ -122,7 +124,11 @@ var currentClimage = (function() {
 			image.onload = function() {
 				that.ctx().clearRect(0,0,200,300);
 				that.ctx().drawImage(image,0,0,200,300);
-				that.imageData = $('#canvas')[0].toDataURL()
+				// don't need imageData for existing image (causes security exception anyhow due to cross domain todataurl call
+				if(that.climageId == 0)
+				    that.imageData = $('#canvas')[0].toDataURL()
+                else
+                    that.imageData = ""
 				if(that.climageId != 0)
 					that.drawRoutePoints();
 			};
