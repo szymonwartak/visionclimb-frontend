@@ -182,7 +182,7 @@ var currentClimage = (function() {
 				this.climageId = 0
 				setTimeout(function() {
 					$.mobile.changePage('#route')
-					currentClimage.drawImage('images/asdf.png')
+					currentClimage.drawImage(comm.server+'/images/asdf.png')
 				}, 500)
 			}
 		},
